@@ -1,0 +1,152 @@
+# Column-role configuration for the "Analyste" agent.
+# Schema-driven: the deterministic tools read column ROLES from here, never
+# hard-coded column names, so the same agent runs on any tweet corpus.
+# To adapt to a new dataset, remap the right-hand column names below.
+
+dataset:
+  path: Dataset/data.xlsx        # relative to project root
+  # sheet: 0                     # optional; default first sheet
+
+columns:
+  id: postID                     # unique message id
+  timestamp: Date                # message datetime
+  author: Author                 # posting account handle
+  text_raw: Full Text            # original text (for display / sampling)
+  text_clean: message_normalizer # normalized text (for NLP / dedup)
+  engagement: Engagement Type    # RETWEET / REPLY / QUOTE / ORIGINAL
+  repost_url: X Repost of        # URL of the reposted original (holds amplified handle)
+  reply_to: X Reply to           # handle this message replies to
+  sentiment: Sentiment           # negative / neutral / positive
+  verified: X Verified           # account verified flag
+  followers: X Followers
+  following: X Following
+  posts: X Posts
+  reach: Reach
+  impressions: Impressions
+  likes: Likes
+  comments: Comments
+  shares: Shares
+
+values:
+  engagement_retweet: RETWEET
+  engagement_original: ORIGINAL
+  # values in `verified` that count as "verified true"
+  verified_true: ["true", "1", "1.0", "yes"]
+
+# Regex to extract the amplified account handle from `repost_url`.
+# Group 1 must capture the handle.
+repost_handle_regex: 'twitter\.com/([^/]+)/status'
+
+# French stop-words for TF-IDF / term counting (extend per language).
+stopwords:
+  - le
+  - la
+  - les
+  - un
+  - une
+  - des
+  - de
+  - du
+  - et
+  - a
+  - à
+  - en
+  - au
+  - aux
+  - ce
+  - cet
+  - cette
+  - ces
+  - que
+  - qui
+  - quoi
+  - dont
+  - ou
+  - où
+  - pour
+  - par
+  - sur
+  - avec
+  - sans
+  - dans
+  - est
+  - sont
+  - ete
+  - été
+  - être
+  - etre
+  - c
+  - s
+  - il
+  - elle
+  - ils
+  - elles
+  - on
+  - nous
+  - vous
+  - je
+  - tu
+  - son
+  - sa
+  - ses
+  - mon
+  - ma
+  - mes
+  - ton
+  - ta
+  - tes
+  - leur
+  - leurs
+  - se
+  - ne
+  - pas
+  - ni
+  - plus
+  - moins
+  - mais
+  - donc
+  - or
+  - car
+  - si
+  - comme
+  - tout
+  - tous
+  - toute
+  - toutes
+  - meme
+  - même
+  - aussi
+  - bien
+  - fait
+  - faire
+  - cela
+  - ça
+  - ca
+  - y
+  - d
+  - l
+  - m
+  - n
+  - t
+  - qu
+  - jai
+  - rt
+  - via
+  - https
+  - http
+  - co
+  - amp
+  - lol
+  - ont
+  - avoir
+  - etre
+  - quand
+  - votre
+  - notre
+  - propos
+  - entre
+  - non
+  - rien
+  - faut
+  - certains
+  - personne

@@ -1,0 +1,48 @@
+{
+  "synthese": "La crise virale autour du CNC (mars–avril 2026) a atteint un pic de 7 303 messages en 24h le 27 mars, avec 35 396 messages au total. Elle est portée par une **propagation fortement coordonnée** (82,4 % de duplication verbatim, rafales synchronisées) et des **narratifs polarisants** (46,8 % des messages accusent le CNC de financer l’extrême gauche ou de pratiquer le copinage). Le sentiment négatif a persisté bien après le pic, culminant à 63,6 % le 16 avril. Le CNC doit **agir rapidement** sur la transparence et cibler les comptes amplificateurs pour désamorcer la crise.",
+  "faits_cles": [
+    "35 396 messages** sur 42 jours (19 mars – 1er mai 2026), avec un pic à **7 303 messages le 27 mars**.",
+    "85,8 % de retweets**, indiquant une propagation principalement amplifiée.",
+    "**Patient zero** : Un retweet le 19 mars à 23h13 par @bouledeneige43 (relais d’un compte @j_bg) évoquant un lien entre Epstein, France Télévisions et la nomination d’Ultia au CNC Talent.",
+    "**Comptes les plus amplifiés** : @SirAfuera (1 852 relais), @LeDindonFiscal (1 544), @ojim_france (1 254), @jon_delorraine (1 083).",
+    "**Taux de duplication verbatim** : 82,4 % (537 messages distincts dupliqués).",
+    "**Rafales synchronisées** : Exemple le 26 mars à 15h07, 7 comptes relayent simultanément un message sur la nomination d’Ultia au CNC.",
+    "**Sentiment négatif** : 30,7 % sur la période, avec un pic à 34,3 % le 27 mars et 63,6 % le 16 avril."
+  ],
+  "narratifs": [
+    {
+      "nom": "Financement de l’extrême gauche et copinage politique",
+      "resume": "Accusation selon laquelle le CNC subventionne des médias ou créateurs clairement orientés à gauche (ex. Blast, Street Press) via le programme CNC Talent, avec des montants précis. Critique de l’opacité des critères et de la partialité du jury.",
+      "volume_pct": 46.8,
+      "exemple": "RT @EugenieBastie Le CNC talent subventionne des médias clairement orientés à l’extrême gauche comme Blast (80 000 euros), Street Press (116 000) ou Off Investigation (50 000). Aucun média internet de droite n’a droit au moindre euro bien sûr. Une série documentaire sur les chev... — @DamienRieu (405 relais)."
+    },
+    {
+      "nom": "L’argent du CNC est un détournement de fonds publics",
+      "resume": "Remise en cause de la légitimité des fonds du CNC, présentés comme une taxe sur YouTube ou un gaspillage. Certains comptes suggèrent que les aides sont clientélistes (« pour un pote »).",
+      "volume_pct": 14.2,
+      "exemple": "@UIAthee Le CNC, ce n'est pas de l'argent public ! — @MrPalourde."
+    },
+    {
+      "nom": "CNC Talent : un fonds corrompu et inefficace",
+      "resume": "Focus sur le programme CNC Talent, accusé de copinage (« jury de gauche ») et d’inefficacité (projets subventionnés qui « ne marchent pas »). Certains messages appellent à sa suppression.",
+      "volume_pct": 9.5,
+      "exemple": "Le CNC Talent a sauté https://t.co/GtKnEPPN5q — @furrynight4ever."
+    },
+    {
+      "nom": "Ultia, symbole des dérives du CNC",
+      "resume": "La streameuse Ultia est présentée comme une figure controversée (liens avec LFI, déclarations polémiques), nommée au jury du CNC. Les messages oscillent entre moquerie (« Cheh pour Ultia ») et soutien (« Ultia, une sainte »).",
+      "volume_pct": 7.5,
+      "exemple": "Cheh pour Ultia. — @djoikoliv."
+    },
+    {
+      "nom": "Le CNC cède à l’extrême droite et suspend les aides",
+      "resume": "Narratif réactif (après le 11 avril) selon lequel le CNC aurait cédé à une pression d’extrême droite en suspendant le fonds CNC Talent après la polémique Ultia. Accusation de partialité inverse.",
+      "volume_pct": 6.7,
+      "exemple": "🐀 « Affaire Ultia » : le CNC cède à l’extrême droite et suspend un fonds d’aide à la création. Après une polémique d’extrême droite, le CNC a limogé la streameuse et suspendu l’attribution du fonds d’aide pour les créateurs sur les réseaux sociaux. https://t.co/CRKneARO2P — @RevPermanente."
+    }
+  ],
+  "dynamique": "La crise s’est déclenchée le 19 mars 2026 avec un message marginal, puis a été **amplifiée massivement à partir du 26 mars** par 5 comptes influents (@LeDindonFiscal, @SirAfuera, @jon_delorraine, @anatolium, @ojim_france) via des **rafales synchronisées** et des **duplications verbatim** (82,4 %). Le pic de 7 303 messages le 27 mars a été suivi d’une **persistance de la négativité** (63,6 % le 16 avril), malgré la baisse du volume. La propagation est **structurellement coordonnée** : une minorité de comptes très actifs (259 comptes totalisent 30 % des messages) dupliquent des messages préparés, tandis que la majorité des auteurs (5 688 comptes) n’ont posté qu’un seul message. Les **narratifs dominants** (46,8 %) accusent le CNC de partialité politique, tandis que des **contre-narratifs** émergent plus tard (ex. « le CNC cède à l’extrême droite »).",
+  "coordination": "La crise présente des **signaux forts de coordination artificielle** : \n- **Taux de duplication verbatim** : 82,4 % (537 messages distincts dupliqués).\n- **Top duplicated messages** : Un message sur les subventions à Blast/Street Press a été relayé **654 fois**, un autre sur Ultia **623 fois**.\n- **Rafales synchronisées** : Exemples marquants : \n  - 26 mars 15h07 : 7 comptes relayent le même message sur la nomination d’Ultia au CNC.\n  - 27 mars 18h48 : 7 comptes relayent un message sur un projet à 30 000 €.\n  - 31 mars 8h24 : 5 comptes relayent un message sur les subventions à l’extrême gauche.\n- **Concentration de l’activité** : 5 688 comptes (54,5 % des auteurs) n’ont posté qu’un seul message, tandis que 259 comptes (2,5 % des auteurs) totalisent 30 % des messages. Cela suggère une **stratégie d’influence centralisée**, avec une minorité de comptes très actifs qui dupliquent des messages préparés pour amplifier artificiellement la crise.",
+  "sentiment": "Le sentiment est **majoritairement neutre (66,3 %)** en raison de la domination des retweets de messages factuels ou de réactions sans jugement explicite. Cependant, la part de négatif atteint **34,3 % au pic du 27 mars** et culmine à **63,6 % le 16 avril**, en réaction aux suspensions de fonds et aux contre-narratifs. La négativité **persiste après le pic de volume**, indiquant une **crise de réputation durable**. Le sentiment positif est marginal (3,0 %).",
+  "limites": "1) **Biais de duplication** : Le taux de 82,4 % de duplication verbatim suggère que certains clusters larges (ex. 46,8 %) pourraient agréger plusieurs cadrages distincts. 2) **Nettoyage du texte** : L’analyse NLP porte sur du texte nettoyé (suppression des hashtags, mentions), ce qui peut masquer des nuances (ex. un hashtag comme #CNCGate pourrait être un marqueur de mobilisation). 3) **Sentiment pré-calculé** : Les scores de sentiment sont automatiques et peuvent sous-estimer l’ironie ou les sous-entendus politiques. 4) **Absence de données externes** : Pas d’accès aux réseaux fermés (Facebook, Telegram) ou aux médias traditionnels pour croiser les données. 5) **Temporalité** : La crise s’étend sur 42 jours, mais l’analyse ne couvre que les messages publics Twitter. Les réactions en temps réel (ex. communiqués du CNC) ne sont pas incluses."
+}

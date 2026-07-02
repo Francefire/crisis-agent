@@ -1,0 +1,25 @@
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Node ---
+node_modules/
+
+# --- Secrets ---
+.env
+
+# --- Editor / tooling ---
+.claude/
+
+# --- LibreOffice / Office lock & temp files ---
+.~lock.*#
+~$*
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+
+# --- Generated agent run logs (keep the JSON outputs) ---
+agent/out/*.log
