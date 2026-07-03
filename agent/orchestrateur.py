@@ -25,14 +25,15 @@ from __future__ import annotations
 import os
 import sys
 import json
+from dataclasses import dataclass
+from typing import Callable
 
 from pydantic import BaseModel, Field
 
-from analyste import (build_structured, build_agent, RapportAnalyste,
-                       DEFAULT_MODEL, ANALYSTE_MODEL, ANALYSTE_RECURSION_LIMIT,
-                       reset_tool_budget, HERE, CORPUS)
+from analyste import (build_structured, run_diagnostic, RapportAnalyste,
+                       DEFAULT_MODEL, ANALYSTE_MODEL, HERE, CORPUS)
 from reviewer import review, audit_livrables, corrections_message
-from runlog import get_logger, served_summary, reset_served, ToolLogger
+from runlog import get_logger, served_summary, reset_served
 
 LOG = get_logger()
 
@@ -119,60 +120,87 @@ PLAN :
 
 
 # ================================================================= pipeline
-def run_analyste(question: str) -> tuple[RapportAnalyste, int, list[str]]:
-    reset_tool_budget()
-    agent = build_agent(tier="big")     # tool-using reasoning stage
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": question}]},
-        config={"callbacks": [ToolLogger()],
-                "recursion_limit": ANALYSTE_RECURSION_LIMIT})
-    report = result.get("structured_response")
-    tool_outputs = [str(m.content) for m in result["messages"]
-                    if getattr(m, "type", "") == "tool"]
+def run_analyste(question: str, deep: bool = False) -> tuple[RapportAnalyste, int, list[str]]:
+    # deep on DeepSeek → thinking tool-agent; elsewhere a no-op (see analyste.run_diagnostic)
+    report, tool_outputs = run_diagnostic(question, deep=deep)
     return report, len(tool_outputs), tool_outputs
 
 
-def run_stratege(report: RapportAnalyste, client: str,
-                 model: str = DEFAULT_MODEL) -> PlanStrategie:
-    llm = build_structured(PlanStrategie)
-    prompt = STRATEGE_PROMPT.format(
-        client=client,
-        diagnostic=json.dumps(report.model_dump(), ensure_ascii=False, indent=2))
-    return llm.invoke(prompt)
+# ======================================================= declarative stages
+# Everything AFTER the Analyste + Reviewer is a "generation" stage: a structured
+# LLM call that reasons ONLY over prior results (no corpus access). Each is declared
+# as DATA — schema + prompt + which prior results feed its prompt — so adding an
+# agent to the pipeline (e.g. a fact-checker, an English rédacteur, a Q&A prepper)
+# is ONE `Stage` entry in `STAGES`, with no change to the run loop. The runner fills
+# the prompt from the accumulating `ctx`, validates the output against the schema,
+# and stores it back in `ctx` under `key` for downstream stages to read.
+
+def _dump(d: dict) -> str:
+    return json.dumps(d, ensure_ascii=False, indent=2)
 
 
-def run_redacteur(report: RapportAnalyste, plan: PlanStrategie, client: str,
-                  model: str = DEFAULT_MODEL) -> LivrablesRedaction:
-    llm = build_structured(LivrablesRedaction)
-    prompt = REDACTEUR_PROMPT.format(
-        client=client,
-        diagnostic=json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
-        plan=json.dumps(plan.model_dump(), ensure_ascii=False, indent=2))
-    return llm.invoke(prompt)
+@dataclass
+class Stage:
+    key: str                              # ctx slot + output field (e.g. "stratege")
+    name: str                             # display label (e.g. "Stratège")
+    schema: type                          # pydantic output schema
+    prompt: str                           # template with {..} slots
+    inputs: Callable[[dict], dict]        # ctx -> prompt .format() kwargs
+    note: str = ""                        # extra text after the label in the step line
+    tier: str = "small"                   # LLM tier (cheap by default)
+
+
+# The downstream pipeline, in order. Each `inputs` reads from `ctx`, which holds the
+# client plus every prior stage's result dict (incl. "analyste" = the diagnostic).
+STAGES: list[Stage] = [
+    Stage(
+        key="stratege", name="Stratège", schema=PlanStrategie, prompt=STRATEGE_PROMPT,
+        note=" — plan de réponse",
+        inputs=lambda ctx: {"client": ctx["client"],
+                            "diagnostic": _dump(ctx["analyste"])},
+    ),
+    Stage(
+        key="redacteur", name="Rédacteur", schema=LivrablesRedaction, prompt=REDACTEUR_PROMPT,
+        note=" — livrables",
+        inputs=lambda ctx: {"client": ctx["client"],
+                            "diagnostic": _dump(ctx["analyste"]),
+                            "plan": _dump(ctx["stratege"])},
+    ),
+]
+
+
+def run_stage(stage: Stage, ctx: dict):
+    """Execute one declarative stage: build a structured LLM at its tier, fill its
+    prompt from `ctx`, invoke, and return the validated pydantic object."""
+    llm = build_structured(stage.schema, tier=stage.tier)
+    return llm.invoke(stage.prompt.format(**stage.inputs(ctx)))
 
 
 def run_pipeline(question: str, client: str = "le CNC", model: str = DEFAULT_MODEL,
-                 use_cache: bool = False, review_llm: bool = True) -> dict:
+                 use_cache: bool = False, review_llm: bool = True,
+                 deep: bool = False) -> dict:
+    n_steps = 2 + len(STAGES)      # Analyste + Reviewer + each declarative stage
+
     # Stage 1 — Analyste (the expensive, multi-call stage). Cache its diagnosis +
     # tool outputs so a quota failure downstream (or iterating) needn't re-run it.
     if use_cache and os.path.exists(DIAG_CACHE):
         with open(DIAG_CACHE) as f:
             report = RapportAnalyste(**json.load(f))
         tool_outputs = json.load(open(TOOLOUT_CACHE)) if os.path.exists(TOOLOUT_CACHE) else []
-        print(f"[1/4] Analyste  — diagnostic (cache : {DIAG_CACHE})", flush=True)
+        print(f"[1/{n_steps}] Analyste  — diagnostic (cache : {DIAG_CACHE})", flush=True)
     else:
         reset_served()
         LOG.info("=== PIPELINE « %s » | analyste=%s cheap=%s ===",
                  question, ANALYSTE_MODEL, DEFAULT_MODEL)
-        print(f"[1/4] Analyste  — diagnostic (« {question} ») [modèle : {ANALYSTE_MODEL}]…",
-              flush=True)
-        report, n_calls, tool_outputs = run_analyste(question)
+        print(f"[1/{n_steps}] Analyste  — diagnostic (« {question} ») [modèle : {ANALYSTE_MODEL}"
+              f"{', approfondi' if deep else ''}]…", flush=True)
+        report, n_calls, tool_outputs = run_analyste(question, deep=deep)
         if report is None:
             sys.exit("L'Analyste n'a pas produit de rapport structuré.")
         print(f"      {n_calls} appels d'outils.", flush=True)
 
     # Stage 2 — Reviewer (audit déterministe + critique LLM), avec UNE reprise.
-    print("[2/4] Relecteur — audit + critique…", flush=True)
+    print(f"[2/{n_steps}] Relecteur — audit + critique…", flush=True)
     rev = review(report.model_dump(), tool_outputs, CORPUS, model, run_llm_critic=review_llm)
     n_err = sum(1 for f in rev["findings"] if f["severity"] == "error")
     print(f"      audit={rev['verdict']} — {len(rev['findings'])} constats "
@@ -180,7 +208,7 @@ def run_pipeline(question: str, client: str = "le CNC", model: str = DEFAULT_MOD
     if rev["verdict"] == "revision_requise" and not use_cache:
         print("      → reprise de l'Analyste avec les corrections…", flush=True)
         LOG.info("reviewer → reprise (%d constat(s))", len(rev["findings"]))
-        report, n_calls, tool_outputs = run_analyste(question + corrections_message(rev))
+        report, n_calls, tool_outputs = run_analyste(question + corrections_message(rev), deep=deep)
         rev2 = review(report.model_dump(), tool_outputs, CORPUS, model, run_llm_critic=review_llm)
         rev = {**rev2, "revision": 1, "review_avant_reprise": rev}
         print(f"      après reprise : verdict={rev['verdict']} "
@@ -191,16 +219,22 @@ def run_pipeline(question: str, client: str = "le CNC", model: str = DEFAULT_MOD
     with open(TOOLOUT_CACHE, "w") as f:
         json.dump(tool_outputs, f, ensure_ascii=False)
 
-    print("[3/4] Stratège  — plan de réponse…", flush=True)
-    plan = run_stratege(report, client, model)
+    # Stages 3.. — declarative generation stages (Stratège, Rédacteur, …). `ctx`
+    # accumulates each result so later stages can read earlier ones by key.
+    ctx: dict = {"client": client, "analyste": report.model_dump()}
+    for i, stage in enumerate(STAGES, start=3):
+        print(f"[{i}/{n_steps}] {stage.name}{stage.note}…", flush=True)
+        ctx[stage.key] = run_stage(stage, ctx).model_dump()
 
-    print("[4/4] Rédacteur — livrables…", flush=True)
-    livrables = run_redacteur(report, plan, client, model)
-    liv_audit = [f.model_dump() for f in audit_livrables(livrables.model_dump(),
-                                                         report.model_dump())]
-    if liv_audit:
-        print(f"      audit livrables : {len(liv_audit)} fuite(s) hors diagnostic.",
-              flush=True)
+    # Rédacteur guardrail: livrables may not introduce a @handle/number absent from
+    # the diagnostic. Runs whenever the Rédacteur stage is present.
+    liv_audit: list = []
+    if "redacteur" in ctx:
+        liv_audit = [f.model_dump()
+                     for f in audit_livrables(ctx["redacteur"], ctx["analyste"])]
+        if liv_audit:
+            print(f"      audit livrables : {len(liv_audit)} fuite(s) hors diagnostic.",
+                  flush=True)
 
     served = served_summary()
     LOG.info("=== SERVED BY: %s ===", served or "(cache — aucun appel LLM)")
@@ -210,10 +244,9 @@ def run_pipeline(question: str, client: str = "le CNC", model: str = DEFAULT_MOD
     return {
         "question": question,
         "client": client,
-        "analyste": report.model_dump(),
+        "analyste": ctx["analyste"],
         "reviewer": rev,
-        "stratege": plan.model_dump(),
-        "redacteur": livrables.model_dump(),
+        **{s.key: ctx[s.key] for s in STAGES},
         "livrables_audit": liv_audit,
         "served_by": served,
     }
@@ -283,12 +316,15 @@ def _print_report(out: dict) -> None:
 
 
 if __name__ == "__main__":
-    # optional flag: --cache reuses the last saved diagnostic (skips the Analyste)
-    args = [a for a in sys.argv[1:] if a != "--cache"]
+    # optional flags: --cache reuses the last saved diagnostic (skips the Analyste);
+    # --deep / --thinking widens the Analyste's tool selection + reasoning.
+    flags = {"--cache", "--deep", "--thinking"}
+    args = [a for a in sys.argv[1:] if a not in flags]
     use_cache = "--cache" in sys.argv[1:]
+    deep = "--deep" in sys.argv[1:] or "--thinking" in sys.argv[1:]
     q = " ".join(args) or \
         "Comment le CNC doit-il réagir à cette crise virale ? Analyse la propagation, les narratifs et la coordination."
-    out = run_pipeline(q, use_cache=use_cache)
+    out = run_pipeline(q, use_cache=use_cache, deep=deep)
     with open(os.path.join(OUT_DIR, "pipeline_result.json"), "w") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
     _print_report(out)
