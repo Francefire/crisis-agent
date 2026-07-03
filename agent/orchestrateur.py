@@ -28,11 +28,18 @@ import json
 
 from pydantic import BaseModel, Field
 
-from analyste import build_model, build_agent, RapportAnalyste, DEFAULT_MODEL, HERE
+from analyste import (build_structured, build_agent, RapportAnalyste,
+                       DEFAULT_MODEL, ANALYSTE_MODEL, ANALYSTE_RECURSION_LIMIT,
+                       reset_tool_budget, HERE, CORPUS)
+from reviewer import review, audit_livrables, corrections_message
+from runlog import get_logger, served_summary, reset_served, ToolLogger
+
+LOG = get_logger()
 
 OUT_DIR = os.path.join(HERE, "out")
 os.makedirs(OUT_DIR, exist_ok=True)
 DIAG_CACHE = os.path.join(OUT_DIR, "diagnostic.json")
+TOOLOUT_CACHE = os.path.join(OUT_DIR, "tool_outputs.json")
 
 
 # ============================================================ STRATÈGE schema
@@ -112,17 +119,22 @@ PLAN :
 
 
 # ================================================================= pipeline
-def run_analyste(question: str, model: str = DEFAULT_MODEL) -> tuple[RapportAnalyste, int]:
-    agent = build_agent(model)
-    result = agent.invoke({"messages": [{"role": "user", "content": question}]})
+def run_analyste(question: str) -> tuple[RapportAnalyste, int, list[str]]:
+    reset_tool_budget()
+    agent = build_agent(tier="big")     # tool-using reasoning stage
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": question}]},
+        config={"callbacks": [ToolLogger()],
+                "recursion_limit": ANALYSTE_RECURSION_LIMIT})
     report = result.get("structured_response")
-    n_calls = sum(1 for m in result["messages"] if getattr(m, "type", "") == "tool")
-    return report, n_calls
+    tool_outputs = [str(m.content) for m in result["messages"]
+                    if getattr(m, "type", "") == "tool"]
+    return report, len(tool_outputs), tool_outputs
 
 
 def run_stratege(report: RapportAnalyste, client: str,
                  model: str = DEFAULT_MODEL) -> PlanStrategie:
-    llm = build_model(model).with_structured_output(PlanStrategie)
+    llm = build_structured(PlanStrategie)
     prompt = STRATEGE_PROMPT.format(
         client=client,
         diagnostic=json.dumps(report.model_dump(), ensure_ascii=False, indent=2))
@@ -131,7 +143,7 @@ def run_stratege(report: RapportAnalyste, client: str,
 
 def run_redacteur(report: RapportAnalyste, plan: PlanStrategie, client: str,
                   model: str = DEFAULT_MODEL) -> LivrablesRedaction:
-    llm = build_model(model).with_structured_output(LivrablesRedaction)
+    llm = build_structured(LivrablesRedaction)
     prompt = REDACTEUR_PROMPT.format(
         client=client,
         diagnostic=json.dumps(report.model_dump(), ensure_ascii=False, indent=2),
@@ -139,36 +151,71 @@ def run_redacteur(report: RapportAnalyste, plan: PlanStrategie, client: str,
     return llm.invoke(prompt)
 
 
-def run_pipeline(question: str, client: str = "le CNC",
-                 model: str = DEFAULT_MODEL, use_cache: bool = False) -> dict:
-    # Stage 1 — Analyste (the expensive, multi-call stage). Cache its diagnosis so
-    # a quota failure downstream (or iterating on Stratège/Rédacteur) needn't
-    # re-run it. use_cache=True reuses the last saved diagnostic if present.
+def run_pipeline(question: str, client: str = "le CNC", model: str = DEFAULT_MODEL,
+                 use_cache: bool = False, review_llm: bool = True) -> dict:
+    # Stage 1 — Analyste (the expensive, multi-call stage). Cache its diagnosis +
+    # tool outputs so a quota failure downstream (or iterating) needn't re-run it.
     if use_cache and os.path.exists(DIAG_CACHE):
         with open(DIAG_CACHE) as f:
             report = RapportAnalyste(**json.load(f))
-        print(f"[1/3] Analyste  — diagnostic (cache : {DIAG_CACHE})", flush=True)
+        tool_outputs = json.load(open(TOOLOUT_CACHE)) if os.path.exists(TOOLOUT_CACHE) else []
+        print(f"[1/4] Analyste  — diagnostic (cache : {DIAG_CACHE})", flush=True)
     else:
-        print(f"[1/3] Analyste  — diagnostic (« {question} »)…", flush=True)
-        report, n_calls = run_analyste(question, model)
+        reset_served()
+        LOG.info("=== PIPELINE « %s » | analyste=%s cheap=%s ===",
+                 question, ANALYSTE_MODEL, DEFAULT_MODEL)
+        print(f"[1/4] Analyste  — diagnostic (« {question} ») [modèle : {ANALYSTE_MODEL}]…",
+              flush=True)
+        report, n_calls, tool_outputs = run_analyste(question)
         if report is None:
             sys.exit("L'Analyste n'a pas produit de rapport structuré.")
-        with open(DIAG_CACHE, "w") as f:
-            json.dump(report.model_dump(), f, ensure_ascii=False, indent=2)
-        print(f"      {n_calls} appels d'outils — diagnostic mis en cache.", flush=True)
+        print(f"      {n_calls} appels d'outils.", flush=True)
 
-    print("[2/3] Stratège  — plan de réponse…", flush=True)
+    # Stage 2 — Reviewer (audit déterministe + critique LLM), avec UNE reprise.
+    print("[2/4] Relecteur — audit + critique…", flush=True)
+    rev = review(report.model_dump(), tool_outputs, CORPUS, model, run_llm_critic=review_llm)
+    n_err = sum(1 for f in rev["findings"] if f["severity"] == "error")
+    print(f"      audit={rev['verdict']} — {len(rev['findings'])} constats "
+          f"({n_err} erreur(s)) ; critique (avis)={rev.get('critique_verdict')}.", flush=True)
+    if rev["verdict"] == "revision_requise" and not use_cache:
+        print("      → reprise de l'Analyste avec les corrections…", flush=True)
+        LOG.info("reviewer → reprise (%d constat(s))", len(rev["findings"]))
+        report, n_calls, tool_outputs = run_analyste(question + corrections_message(rev))
+        rev2 = review(report.model_dump(), tool_outputs, CORPUS, model, run_llm_critic=review_llm)
+        rev = {**rev2, "revision": 1, "review_avant_reprise": rev}
+        print(f"      après reprise : verdict={rev['verdict']} "
+              f"({len(rev['findings'])} constats).", flush=True)
+
+    with open(DIAG_CACHE, "w") as f:
+        json.dump(report.model_dump(), f, ensure_ascii=False, indent=2)
+    with open(TOOLOUT_CACHE, "w") as f:
+        json.dump(tool_outputs, f, ensure_ascii=False)
+
+    print("[3/4] Stratège  — plan de réponse…", flush=True)
     plan = run_stratege(report, client, model)
 
-    print("[3/3] Rédacteur — livrables…", flush=True)
+    print("[4/4] Rédacteur — livrables…", flush=True)
     livrables = run_redacteur(report, plan, client, model)
+    liv_audit = [f.model_dump() for f in audit_livrables(livrables.model_dump(),
+                                                         report.model_dump())]
+    if liv_audit:
+        print(f"      audit livrables : {len(liv_audit)} fuite(s) hors diagnostic.",
+              flush=True)
+
+    served = served_summary()
+    LOG.info("=== SERVED BY: %s ===", served or "(cache — aucun appel LLM)")
+    print(f"      servi par : {served or '(cache)'}  |  journal : {get_logger().handlers[0].baseFilename}",
+          flush=True)
 
     return {
         "question": question,
         "client": client,
         "analyste": report.model_dump(),
+        "reviewer": rev,
         "stratege": plan.model_dump(),
         "redacteur": livrables.model_dump(),
+        "livrables_audit": liv_audit,
+        "served_by": served,
     }
 
 
@@ -188,6 +235,29 @@ def _print_report(out: dict) -> None:
     for k in ("dynamique", "coordination", "sentiment"):
         if r.get(k):
             print(f"\n{k.capitalize()} : {r[k]}")
+
+    rev = out.get("reviewer")
+    if rev:
+        print(f"\n{L}\nRELECTURE (Reviewer) — verdict : {rev['verdict']}\n{L}")
+        if rev.get("revision"):
+            print("(après 1 reprise de l'Analyste)")
+        if rev["findings"]:
+            print("Constats d'audit :")
+            for f in rev["findings"]:
+                print(f"  • [{f['severity']}/{f['type']}] {f['where']} — {f['detail']}")
+        else:
+            print("Audit : aucun @handle inconnu ni chiffre non sourcé détecté.")
+        crit = rev.get("critique")
+        if crit:
+            print(f"Critique LLM (avis, non bloquant) — verdict : {rev.get('critique_verdict')}")
+            if crit.get("surinterpretations"):
+                print("  Sur-interprétations :", "; ".join(crit["surinterpretations"]))
+            if crit.get("preuves_a_recouper"):
+                print("  À recouper :", "; ".join(crit["preuves_a_recouper"]))
+        if out.get("livrables_audit"):
+            print("Fuites livrables (hors diagnostic) :")
+            for f in out["livrables_audit"]:
+                print(f"  • [{f['type']}] {f['detail']}")
 
     print(f"\n{L}\nPLAN (Stratège)\n{L}")
     print("Posture :", p["posture"])

@@ -1,142 +1,163 @@
 {
-  "question": "Comment le CNC doit-il réagir à cette crise virale ? Analyse la propagation, les narratifs et la coordination.",
+  "question": "Quels sont les principaux facteur de propagation et comment reagir ?",
   "client": "le CNC",
   "analyste": {
-    "synthese": "La crise virale autour du CNC (mars–avril 2026) a atteint un pic de 7 303 messages en 24h le 27 mars, avec 35 396 messages au total. Elle est portée par une **propagation fortement coordonnée** (82,4 % de duplication verbatim, rafales synchronisées) et des **narratifs polarisants** (46,8 % des messages accusent le CNC de financer l’extrême gauche ou de pratiquer le copinage). Le sentiment négatif a persisté bien après le pic, culminant à 63,6 % le 16 avril. Le CNC doit **agir rapidement** sur la transparence et cibler les comptes amplificateurs pour désamorcer la crise.",
+    "synthese": "La crise autour de l'affaire Ultia × CNC (mars-avril 2026) a généré 35 396 messages en 42 jours, dont 85,8 % de retweets, portés par une amplification massive et coordonnée. Le déclencheur est la nomination d'Ultia au jury du fonds CNC Talent, suivie de ses déclarations sur l'exclusion des créateurs « d'extrême droite ». La propagation est fulgurante : le pic est atteint en 7 heures le 26 mars 2026, avec un temps de doublement de 2,77 h. Le cadrage initial centré sur Ultia (cluster 3, pic le 26 mars) est immédiatement dépassé par un narratif plus large de dénonciation du financement public du cinéma et des médias « d'extrême gauche » (cluster 2, 46,8 % du volume, pic le 27 mars). L'amplification présente des signaux nets de coordination (synchronie ×3,7 supérieure au hasard, 14,7 % de comptes à faible empreinte), mais le vrai copier-coller est quasi nul (0,6 %).",
     "faits_cles": [
-      "35 396 messages** sur 42 jours (19 mars – 1er mai 2026), avec un pic à **7 303 messages le 27 mars**.",
-      "85,8 % de retweets**, indiquant une propagation principalement amplifiée.",
-      "**Patient zero** : Un retweet le 19 mars à 23h13 par @bouledeneige43 (relais d’un compte @j_bg) évoquant un lien entre Epstein, France Télévisions et la nomination d’Ultia au CNC Talent.",
-      "**Comptes les plus amplifiés** : @SirAfuera (1 852 relais), @LeDindonFiscal (1 544), @ojim_france (1 254), @jon_delorraine (1 083).",
-      "**Taux de duplication verbatim** : 82,4 % (537 messages distincts dupliqués).",
-      "**Rafales synchronisées** : Exemple le 26 mars à 15h07, 7 comptes relayent simultanément un message sur la nomination d’Ultia au CNC.",
-      "**Sentiment négatif** : 30,7 % sur la période, avec un pic à 34,3 % le 27 mars et 63,6 % le 16 avril."
+      "Volume total : 35 396 messages, 10 437 comptes, sur 42 jours (19 mars – 1er mai 2026).",
+      "Taux de retweet : 85,8 % (30 368 RT sur 35 396 messages) — l'essentiel de la propagation est de l'amplification native, pas du copier-coller.",
+      "Pic de volume : 751 messages/heure le 26 mars 2026 à 16h00, avec un temps de montée de 7 h (déclenchement à 09h00, pic à 16h00).",
+      "Temps de doublement : 2,77 h ; taux de croissance horaire : 28,5 % ; demi-vie post-pic : 7 h.",
+      "L'audience (reach) culmine 2 heures AVANT le volume (reach_vs_volume_lead_periods = -2) : les comptes à forte audience s'allument avant la masse des relayeurs.",
+      "Comptes les plus amplifiés : @SirAfuera (1 852 RT), @LeDindonFiscal (1 544), @ojim_france (1 254), @jon_delorraine (1 083), @anatolium (1 065).",
+      "Comptes les plus actifs (émetteurs) : @LaPravda99 (111), @alain_co (108), @Alain_83740 (105), @RabbinAvZemmour (101).",
+      "Narratif dominant (cluster 2, 46,8 %) : critique du financement CNC accusé de subventionner des médias « d'extrême gauche » (Blast, Street Press, Off Investigation) — pic le 27 mars.",
+      "Narratif initial (cluster 3, 7,5 %) centré sur Ultia — pic le 26 mars, soit un jour avant le narratif dominant : le cadrage a dérivé de la streameuse vers le système CNC.",
+      "Coordination : 30,1 % des retweets postés à moins de 60 secondes d'un autre (synchrony_lift_vs_uniform = 3,7× le hasard).",
+      "Vrai copier-coller (copy_paste_rate_pct) : 0,6 % — quasi nul ; la duplication verbatim à 82,4 % est intégralement due aux retweets (retweet_share_of_duplicated_pct = 100 %).",
+      "14,7 % de comptes à faible empreinte (1 seul message, peu de posts, peu d'abonnés) — proxy de comptes potentiellement éphémères.",
+      "Engagement organique quasi nul sur les messages à fort reach : ratio organic/reach global = 0,007 ; 646 messages à fort reach ont un engagement organique de 0 — compatible avec une amplification mécanique.",
+      "Sentiment : 30,7 % négatif, 66,3 % neutre, 3,0 % positif. Le jour du pic (27 mars), la part de négatif atteint 34,3 % (vs 30,7 % en moyenne). La période la plus négative est le 16 avril (63,6 % de négatif).",
+      "Cibles des réponses les plus négatives : @TubeGauchiste (75 % négatif), @S_Legrain (68,4 %), @TwitchGauchiste (60,6 %), @Arno_Kikoo (57,1 %)."
     ],
     "narratifs": [
       {
-        "nom": "Financement de l’extrême gauche et copinage politique",
-        "resume": "Accusation selon laquelle le CNC subventionne des médias ou créateurs clairement orientés à gauche (ex. Blast, Street Press) via le programme CNC Talent, avec des montants précis. Critique de l’opacité des critères et de la partialité du jury.",
+        "nom": "Dénonciation du financement CNC aux médias « d'extrême gauche »",
+        "resume": "Narratif dominant (46,8 % du volume) : le CNC est accusé de subventionner des médias et créateurs orientés à gauche/extrême gauche (Blast, Street Press, Off Investigation, Usul, Ragnar le Breton) avec l'argent des contribuables, tandis qu'aucun média de droite n'en bénéficierait.",
         "volume_pct": 46.8,
-        "exemple": "RT @EugenieBastie Le CNC talent subventionne des médias clairement orientés à l’extrême gauche comme Blast (80 000 euros), Street Press (116 000) ou Off Investigation (50 000). Aucun média internet de droite n’a droit au moindre euro bien sûr. Une série documentaire sur les chev... — @DamienRieu (405 relais)."
+        "exemple": "RT @EugenieBastie Le CNC talent subventionne des médias clairement orientés à l'extrême gauche comme Blast (80 000 euros), Street Press (116 000) ou Off Investigation (50 000). Aucun média internet de droite n'a droit au moindre euro bien sûr."
       },
       {
-        "nom": "L’argent du CNC est un détournement de fonds publics",
-        "resume": "Remise en cause de la légitimité des fonds du CNC, présentés comme une taxe sur YouTube ou un gaspillage. Certains comptes suggèrent que les aides sont clientélistes (« pour un pote »).",
+        "nom": "Détournement d'argent public / gaspillage",
+        "resume": "14,2 % du volume : dénonciation de l'argent public versé par le CNC, présenté comme un gaspillage ou un détournement. Le thème « argent des Français » est central, avec des accusations de favoritisme et de clientélisme politique.",
         "volume_pct": 14.2,
-        "exemple": "@UIAthee Le CNC, ce n'est pas de l'argent public ! — @MrPalourde."
+        "exemple": "RT @anatolium Ce qui suit a coûté 30.000 euros aux citoyens Français. Mais ce n'est pas tout. Le CNC n'a le droit de financer qu'à hauteur de 50% une production."
       },
       {
-        "nom": "CNC Talent : un fonds corrompu et inefficace",
-        "resume": "Focus sur le programme CNC Talent, accusé de copinage (« jury de gauche ») et d’inefficacité (projets subventionnés qui « ne marchent pas »). Certains messages appellent à sa suppression.",
+        "nom": "Critique du programme CNC Talent",
+        "resume": "9,5 % du volume : focalisation sur le fonds CNC Talent, son jury, ses critères d'attribution et l'absence de transparence. Accusations de copinage et de partialité politique.",
         "volume_pct": 9.5,
-        "exemple": "Le CNC Talent a sauté https://t.co/GtKnEPPN5q — @furrynight4ever."
+        "exemple": "RT @fxbellamy Nommée par le CNC dans la commission qui distribue les fonds du programme Talent, une créatrice de contenus explique benoîtement comment elle et ses amis se répartissent l'argent."
       },
       {
-        "nom": "Ultia, symbole des dérives du CNC",
-        "resume": "La streameuse Ultia est présentée comme une figure controversée (liens avec LFI, déclarations polémiques), nommée au jury du CNC. Les messages oscillent entre moquerie (« Cheh pour Ultia ») et soutien (« Ultia, une sainte »).",
+        "nom": "Ciblage direct d'Ultia",
+        "resume": "7,5 % du volume : le narratif initial, centré sur la streameuse Ultia, ses déclarations sur l'exclusion des créateurs « d'extrême droite », et son éviction du CNC. Premier cluster à culminer (26 mars).",
         "volume_pct": 7.5,
-        "exemple": "Cheh pour Ultia. — @djoikoliv."
+        "exemple": "RT @guilhemcarayon Ultia, streameuse proche de LFI, membre du jury du Centre National du Cinéma, explique en totale impunité qu'elle distribue l'argent du CNC en fonction de ses opinions politiques."
       },
       {
-        "nom": "Le CNC cède à l’extrême droite et suspend les aides",
-        "resume": "Narratif réactif (après le 11 avril) selon lequel le CNC aurait cédé à une pression d’extrême droite en suspendant le fonds CNC Talent après la polémique Ultia. Accusation de partialité inverse.",
+        "nom": "Défense du CNC / accusation d'instrumentalisation par l'extrême droite",
+        "resume": "6,7 % du volume : narratif en réaction, dénonçant une campagne d'extrême droite contre le CNC et présentant la suspension du fonds comme une capitulation face à la pression politique.",
         "volume_pct": 6.7,
-        "exemple": "🐀 « Affaire Ultia » : le CNC cède à l’extrême droite et suspend un fonds d’aide à la création. Après une polémique d’extrême droite, le CNC a limogé la streameuse et suspendu l’attribution du fonds d’aide pour les créateurs sur les réseaux sociaux. https://t.co/CRKneARO2P — @RevPermanente."
+        "exemple": "RT @RevPermanente 🐀 « Affaire Ultia » : le CNC cède à l'extrême droite et suspend un fonds d'aide à la création. Après une polémique d'extrême droite, le CNC a limogé la streameuse et suspendu l'attribution du fonds d'aide."
       }
     ],
-    "dynamique": "La crise s’est déclenchée le 19 mars 2026 avec un message marginal, puis a été **amplifiée massivement à partir du 26 mars** par 5 comptes influents (@LeDindonFiscal, @SirAfuera, @jon_delorraine, @anatolium, @ojim_france) via des **rafales synchronisées** et des **duplications verbatim** (82,4 %). Le pic de 7 303 messages le 27 mars a été suivi d’une **persistance de la négativité** (63,6 % le 16 avril), malgré la baisse du volume. La propagation est **structurellement coordonnée** : une minorité de comptes très actifs (259 comptes totalisent 30 % des messages) dupliquent des messages préparés, tandis que la majorité des auteurs (5 688 comptes) n’ont posté qu’un seul message. Les **narratifs dominants** (46,8 %) accusent le CNC de partialité politique, tandis que des **contre-narratifs** émergent plus tard (ex. « le CNC cède à l’extrême droite »).",
-    "coordination": "La crise présente des **signaux forts de coordination artificielle** : \n- **Taux de duplication verbatim** : 82,4 % (537 messages distincts dupliqués).\n- **Top duplicated messages** : Un message sur les subventions à Blast/Street Press a été relayé **654 fois**, un autre sur Ultia **623 fois**.\n- **Rafales synchronisées** : Exemples marquants : \n  - 26 mars 15h07 : 7 comptes relayent le même message sur la nomination d’Ultia au CNC.\n  - 27 mars 18h48 : 7 comptes relayent un message sur un projet à 30 000 €.\n  - 31 mars 8h24 : 5 comptes relayent un message sur les subventions à l’extrême gauche.\n- **Concentration de l’activité** : 5 688 comptes (54,5 % des auteurs) n’ont posté qu’un seul message, tandis que 259 comptes (2,5 % des auteurs) totalisent 30 % des messages. Cela suggère une **stratégie d’influence centralisée**, avec une minorité de comptes très actifs qui dupliquent des messages préparés pour amplifier artificiellement la crise.",
-    "sentiment": "Le sentiment est **majoritairement neutre (66,3 %)** en raison de la domination des retweets de messages factuels ou de réactions sans jugement explicite. Cependant, la part de négatif atteint **34,3 % au pic du 27 mars** et culmine à **63,6 % le 16 avril**, en réaction aux suspensions de fonds et aux contre-narratifs. La négativité **persiste après le pic de volume**, indiquant une **crise de réputation durable**. Le sentiment positif est marginal (3,0 %).",
-    "limites": "1) **Biais de duplication** : Le taux de 82,4 % de duplication verbatim suggère que certains clusters larges (ex. 46,8 %) pourraient agréger plusieurs cadrages distincts. 2) **Nettoyage du texte** : L’analyse NLP porte sur du texte nettoyé (suppression des hashtags, mentions), ce qui peut masquer des nuances (ex. un hashtag comme #CNCGate pourrait être un marqueur de mobilisation). 3) **Sentiment pré-calculé** : Les scores de sentiment sont automatiques et peuvent sous-estimer l’ironie ou les sous-entendus politiques. 4) **Absence de données externes** : Pas d’accès aux réseaux fermés (Facebook, Telegram) ou aux médias traditionnels pour croiser les données. 5) **Temporalité** : La crise s’étend sur 42 jours, mais l’analyse ne couvre que les messages publics Twitter. Les réactions en temps réel (ex. communiqués du CNC) ne sont pas incluses."
+    "dynamique": "La crise suit une chronologie en trois phases. **Phase 1 — Allumage (19-25 mars)** : le premier message identifié est un retweet du 19 mars évoquant un lien entre France Télévisions et l'affaire Epstein, sans lien direct avec Ultia. Le volume reste inférieur à 100 messages/jour. **Phase 2 — Explosion (26-27 mars)** : le 26 mars à 09h00, le volume décolle brutalement (130 msg/h). En 7 heures, il atteint 751 msg/h à 16h00 (pic absolu). Le temps de doublement est de 2,77 h. L'audience (reach) culmine 2 heures avant le volume (14h00), signe que les comptes à forte audience (@jon_delorraine premier relayeur à 12h03, @LeDindonFiscal à 15h21, @SirAfuera à 15h24) s'allument avant la masse des relayeurs. Le 27 mars est le jour le plus actif (7 303 messages). **Phase 3 — Dérive narrative et résidus (28 mars - 1er mai)** : le narratif initial centré sur Ultia (cluster 3) culmine le 26 mars. Dès le 27 mars, le narratif dominant (cluster 2, critique du financement CNC aux médias « d'extrême gauche ») prend le relais avec 3 138 messages dans la journée. Deux clusters plus tardifs (cluster 7 sur les « AI/financements » et cluster 1 sur les « impôts/taxes ») culminent le 29 mars, élargissant encore le périmètre de la critique. Une résurgence modérée a lieu autour du 8-10 avril (pic à ~800 msg/jour) puis le 16 avril (période la plus négative : 63,6 % de négatif). La demi-vie post-pic est de 7 h, mais des réverbérations persistent jusqu'au 1er mai.",
+    "coordination": "L'amplification présente des signaux compatibles avec une coordination, sans preuve d'automatisation. **Duplication** : 82,4 % des messages sont des duplications verbatim, mais ce taux est intégralement dû aux retweets (retweet_share_of_duplicated_pct = 100 %). Le vrai copier-coller (même texte posté en ORIGINAL/QUOTE) est quasi nul : 0,6 %. **Synchronie** : 30,1 % des retweets sont postés à moins de 60 secondes d'un autre portant le même texte, soit un lift de 3,7× par rapport à un étalement uniforme sur la durée de vie du tweet (synchrony_lift_vs_uniform). Les textes les plus synchronisés sont le communiqué du CNC (@LeCNC, 69,9 % des 509 copies en <60 s, médiane inter-arrivée 48,5 s) et les messages de @charlesvillaa (62,6 %) et @SirenesFR (61,2 %). **Proxies de comptes** : 14,7 % des comptes (1 535) sont des « low footprint amplifiers » (1 seul message, peu de posts, peu d'abonnés). 54,5 % des comptes n'ont posté qu'un seul message dans le corpus. 73,2 % des comptes suivent plus de comptes qu'ils n'ont d'abonnés. **Réseau de co-activité** : le graphe de coordination (4 275 nœuds, 6 041 arêtes) forme un grand composant de 2 824 nœuds — un relais massif diffus plutôt que des cellules isolées. Les 5 plus gros clusters (122-138 comptes chacun) partagent principalement les mêmes textes : l'appel à enquêter sur le CNC (@jon_delorraine) et la critique des « 2 idiotes rances » (@crohnfighter). Ces clusters ont 4-8,8 % de vérifiés et 18-27 % de comptes à message unique. **Engagement organique** : le ratio organic/reach global est de 0,007 ; 646 messages à fort reach (≥P90) ont un engagement organique nul — compatible avec une amplification mécanique où le reach est porté par les retweets, pas par l'interaction humaine. **Par sentiment** : les messages neutres ont le taux de duplication le plus élevé (87,5 % vs 78,8 % pour les négatifs), mais les scores de synchronie sont quasi identiques (29,5 % négatif, 29,4 % neutre). Les messages négatifs ont une part légèrement plus élevée de comptes à faible empreinte (5,4 % vs 3,8 % pour les neutres).",
+    "sentiment": "Le sentiment global est majoritairement neutre (66,3 %), avec une forte minorité négative (30,7 %) et une part infime de positif (3,0 %). Le jour du pic de volume (27 mars), la négativité atteint 34,3 %, soit au-dessus de la moyenne. La période la plus négative est le 16 avril (63,6 % de négatif), correspondant à une résurgence tardive du débat. Les messages négatifs ont un reach moyen légèrement inférieur aux neutres (2 111 vs 2 241) mais un engagement organique moyen plus élevé (20,3 vs 13,0), suggérant que les messages négatifs suscitent davantage de réactions humaines. Les cibles de réponses les plus négatives sont @TubeGauchiste (75 % négatif), @S_Legrain (68,4 %) et @TwitchGauchiste (60,6 %).",
+    "limites": "1. Aucune date de création de compte n'est disponible dans les données : la notion de « comptes récents » est approchée par des proxies (message unique, faible nombre de posts, peu d'abonnés). 2. L'analyse de coordination repose sur des signaux statistiques (synchronie, faible empreinte) qui sont compatibles avec une amplification coordonnée mais ne constituent pas une preuve d'automatisation ou d'intention délibérée. 3. Le cluster dominant (cluster 2, 46,8 %) est large et agrège plusieurs sous-cadrages (critique des médias subventionnés, accusation de partialité politique, dénonciation du gaspillage) — un k plus élevé aurait pu les subdiviser. 4. Le sentiment est pré-calculé par un modèle automatique ; les tweets au ton ironique ou sarcastique peuvent être mal classés. 5. L'analyse porte sur le texte nettoyé (normalisé, sans URLs ni mentions) : certains verbatims peuvent différer légèrement du texte original affiché. 6. Le budget d'exploration a été atteint avant de pouvoir obtenir des échantillons de tweets originaux de @SirAfuera et @jon_delorraine — les verbatims cités proviennent des retweets et des échantillons des clusters."
+  },
+  "reviewer": {
+    "findings": [
+      {
+        "severity": "warning",
+        "type": "tone",
+        "where": "coordination",
+        "detail": "terme « automatisation » : rester sur « signal compatible avec », pas d'affirmation d'automatisation/intention."
+      }
+    ],
+    "critique": {
+      "couverture_axes": [
+        "Acteurs",
+        "Narratifs",
+        "Propagation",
+        "Coordination",
+        "Sémantique"
+      ],
+      "surinterpretations": [
+        "L'affirmation selon laquelle les messages négatifs suscitent davantage de réactions humaines est susceptible d'être sur-interprétée"
+      ],
+      "preuves_a_recouper": [
+        "Vérifier les comptes à faible empreinte",
+        "Compléter les informations sur les comptes à forte audience"
+      ],
+      "incoherences": [
+        "La mention de comptes à faible empreinte comme « proxy de comptes potentiellement éphémères » est contradictoire avec la définition de ces comptes comme ayant « 1 seul message, peu de posts, peu d'abonnés »"
+      ],
+      "ton": [
+        "L'utilisation du terme « bots prouvés » est inappropriée"
+      ],
+      "verdict": "valide",
+      "corrections_demandees": [
+        "Vérifier l'existence de comptes inconnus",
+        "Clarifier les affirmations sur la coordination",
+        "Compléter les axes de la couverture",
+        "Vérifier les faits cités"
+      ]
+    },
+    "critique_verdict": "valide",
+    "verdict": "valide"
   },
   "stratege": {
-    "diagnostic_synthese": "Crise virale de désinformation et de polarisation autour du CNC (mars–avril 2026), marquée par une propagation **fortement coordonnée** (82,4 % de duplication verbatim, rafales synchronisées) et des **narratifs accusateurs** (46,8 % des messages), avec un pic de 7 303 messages en 24h le 27 mars et une persistance du sentiment négatif (63,6 % le 16 avril).",
+    "diagnostic_synthese": "La crise autour de l'affaire Ultia × CNC (mars-avril 2026) a généré 35 396 messages en 42 jours, dont 85,8 % de retweets, portés par une amplification massive et coordonnée.",
     "objectifs": [
-      "Rétablir la transparence sur les critères et l’attribution des aides du CNC Talent pour contrer les accusations de partialité.",
-      "Désamorcer les narratifs polarisants en apportant des éléments factuels et sourcés.",
-      "Réduire l’impact des comptes amplificateurs coordonnés en ciblant les relais les plus actifs.",
-      "Prévenir la persistance de la crise en anticipant les contre-narratifs émergents."
+      "Rétablir les faits",
+      "Désescalade"
     ],
     "audiences": [
-      "Grand public (utilisateurs de réseaux sociaux, contribuables, créateurs de contenu).",
-      "Médias traditionnels (pour recadrer le débat et éviter l’amplification des narratifs polarisants).",
-      "Comptes influents et relais identifiés (pour couper court à la duplication des messages).",
-      "Jury et équipes du CNC Talent (pour clarifier les processus internes et éviter les malentendus)."
+      "Publics clés à adresser : @TubeGauchiste, @S_Legrain, @TwitchGauchiste"
     ],
     "axes_reponse": [
       {
-        "axe": "Transparence immédiate sur les critères et montants des aides CNC Talent",
-        "action": "Publier un communiqué détaillé listant les critères d’attribution des aides CNC Talent, les montants alloués par projet, et les noms des membres du jury. Organiser une conférence de presse avec un porte-parole dédié pour répondre aux questions en direct.",
-        "justification": "46,8 % des messages accusent le CNC de financer l’extrême gauche ou de pratiquer le copinage, avec des montants précis cités (ex. 80 000 € pour Blast). Une transparence sur les critères et les montants permettrait de déconstruire ces accusations."
+        "axe": "Transparence",
+        "action": "Réponse transparente et factuelle",
+        "justification": "Le diagnostic montre que les messages négatifs ont un reach moyen légèrement inférieur aux neutres mais un engagement organique moyen plus élevé, suggérant que les messages négatifs suscitent davantage de réactions humaines."
       },
       {
-        "axe": "Démontage factuel des narratifs polarisants via des sources tierces",
-        "action": "Créer une page dédiée sur le site du CNC, intitulée « Faits et chiffres : le CNC répond à vos questions », avec des infographies et des FAQ. Collaborer avec des médias fact-checkers (ex. AFP Factuel, Les Décodeurs) pour publier des articles vérifiés sur les montants et les critères des aides.",
-        "justification": "Les narratifs polarisants (ex. financement de l’extrême gauche) reposent sur des chiffres et des exemples précis, mais souvent sortis de leur contexte. Une réponse factuelle et sourcée permettrait de rétablir la vérité."
+        "axe": "Coordination",
+        "action": "Communication rapide et coordonnée",
+        "justification": "L'amplification présente des signaux compatibles avec une coordination, sans preuve d'automatisation."
       },
       {
-        "axe": "Ciblage direct des comptes amplificateurs coordonnés",
-        "action": "Identifier les 10 comptes les plus actifs (ex. @SirAfuera, @LeDindonFiscal) et leur adresser un courrier officiel les informant des règles de modération de Twitter/X, avec une copie à la plateforme. Si les messages persistent, signaler les comptes pour manipulation de l’information.",
-        "justification": "82,4 % de duplication verbatim et des rafales synchronisées (ex. 7 comptes relayant le même message à 15h07 le 26 mars) indiquent une coordination artificielle. Cibler ces comptes permettrait de réduire l’amplification des messages."
-      },
-      {
-        "axe": "Communication proactive sur les contre-narratifs émergents",
-        "action": "Anticiper le contre-narratif « le CNC cède à l’extrême droite » en préparant un argumentaire clair expliquant les raisons des suspensions (ex. respect des règles de neutralité, processus de révision). Diffuser ce message via les canaux officiels du CNC et relayer par les relais institutionnels (ministères, partenaires).",
-        "justification": "6,7 % des messages émergent après le 11 avril avec un narratif de partialité inverse (« le CNC cède à l’extrême droite »). Une communication proactive permettrait d’éviter une amplification similaire."
-      },
-      {
-        "axe": "Mobilisation des relais institutionnels et médiatiques",
-        "action": "Envoyer un briefing aux rédactions des médias nationaux et locaux pour leur fournir les éléments factuels (critères, montants, processus) et les encourager à relayer les informations officielles. Proposer des interviews aux journalistes spécialisés (médias, culture).",
-        "justification": "85,8 % de retweets indiquent que la propagation est amplifiée par des relais médiatiques et institutionnels. Les mobiliser permettrait de contrer la désinformation à la source."
+        "axe": "Sourcing",
+        "action": "Sourcing et vérification des informations",
+        "justification": "Le diagnostic montre que les messages neutres ont le taux de duplication le plus élevé, mais les scores de synchronie sont quasi identiques (29,5 % négatif, 29,4 % neutre)."
       }
     ],
     "risques": [
-      "Ne pas publier rapidement les informations demandées par le public, ce qui alimenterait la défiance et la persistance des narratifs polarisants.",
-      "Cibler uniquement les comptes sans réponse factuelle, ce qui pourrait être perçu comme une censure et nourrir les accusations de partialité.",
-      "Sous-estimer la persistance du sentiment négatif (63,6 % le 16 avril), qui indique une crise de réputation durable nécessitant une communication continue.",
-      "Ignorer les contre-narratifs émergents, qui pourraient prendre de l’ampleur et relancer la crise."
+      "Nourrir le troll",
+      "Polémique"
     ],
     "kpis": [
-      "Nombre de visites sur la page « Faits et chiffres : le CNC répond à vos questions » (objectif : 50 000 en 7 jours).",
-      "Taux de duplication verbatim des messages polarisants (objectif : réduction de 50 % en 14 jours).",
-      "Part de sentiment négatif sur les réseaux sociaux (objectif : baisse sous 30 % en 30 jours).",
-      "Nombre de comptes amplificateurs signalés ou modérés (objectif : 10 comptes ciblés en 48h).",
-      "Taux de partage des contenus officiels du CNC (objectif : 20 % des messages relayés par les relais institutionnels)."
+      "Indicateurs de désescalade à suivre : engagement organique, reach moyen, taux de duplication"
     ],
-    "posture": "Transparence factuelle et réactivité. Le ton doit être neutre, pédagogique et sourcé, en évitant toute polémique ou réponse émotionnelle. L’objectif est de rétablir la confiance en fournissant des éléments concrets et vérifiables."
+    "posture": "Posture/ton recommandé : transparence factuelle"
   },
   "redacteur": {
-    "communique": "**COMMUNIQUÉ OFFICIEL DU CNC – TRANSPARENCE ET CLARTÉ SUR LES AIDES CNC TALENT**\n\nParis, le 2 mai 2026\n\nLe CNC prend acte des débats publics récents concernant l’attribution des aides du programme **CNC Talent** et réaffirme son engagement en faveur de la **transparence totale** sur ses processus et ses décisions. \n\n**1. Critères d’attribution des aides CNC Talent**\nLes aides sont attribuées selon des critères **objectifs et publics**, évalués par un jury indépendant composé de professionnels du secteur (créateurs, producteurs, experts techniques). Les projets sont sélectionnés sur la base de leur **qualité artistique, leur faisabilité technique et leur potentiel d’impact**, sans considération politique ou idéologique. \n\n**2. Montants et bénéficiaires**\nPour répondre aux interrogations, le CNC publie aujourd’hui la **liste complète des projets financés en 2025-2026**, avec les montants alloués et les noms des bénéficiaires. Ces données sont disponibles sur [le site du CNC](https://www.cnc.fr) et seront mises à jour trimestriellement. \n\n**3. Composition du jury**\nLe jury du programme CNC Talent est composé de **12 membres**, issus de divers horizons professionnels (réalisation, production, distribution, technique). Leurs noms et parcours sont consultable sur le site du CNC. \n\n**4. Réponse aux accusations de partialité**\nLe CNC rejette catégoriquement les allégations de financement ciblé ou de copinage politique. Les montants cités dans l’espace public (ex. 80 000 € pour Blast, 116 000 € pour Street Press) **ne correspondent pas à des aides CNC Talent**, mais à des subventions attribuées dans le cadre d’autres dispositifs, soumis à des règles distinctes. \n\n**5. Mesures immédiates**\n- **Publication des données** : Une page dédiée, **« Faits et chiffres : le CNC répond à vos questions »**, est en ligne dès aujourd’hui. Elle inclut des infographies, des FAQ et des exemples concrets de projets financés. \n- **Dialogue avec les médias** : Le CNC organise une conférence de presse le **5 mai 2026** à 14h pour répondre aux questions des journalistes. \n- **Signalement des comptes coordonnés** : Le CNC a identifié les comptes les plus actifs dans la propagation de messages **dupliqués et synchronisés** (ex. @SirAfuera, @LeDindonFiscal). Une procédure de signalement a été engagée auprès de Twitter/X pour vérifier leur conformité aux règles de la plateforme. \n\n**6. Perspectives**\nLe CNC reste à l’écoute des créateurs et du public. Un **numéro vert** (0 800 00 123 45) et une adresse mail (**transparence@cnc.fr**) sont mis à disposition pour recueillir les questions et suggestions. \n\n*« La confiance se rebuild par l’action et la transparence. Nous agissons aujourd’hui pour clarifier les règles et rétablir le dialogue. »*\n\n**Contact presse** : \n[Nom du responsable] \nTél. : [numéro] \nEmail : [adresse]\n\n---\n*Le CNC est l’établissement public qui soutient et promeut l’industrie du cinéma, de l’audiovisuel, du jeu vidéo et des médias numériques en France.*",
+    "communique": "Le CNC souhaite rappeler que son rôle est de soutenir la création cinématographique et audiovisuelle en France, sans prendre parti dans les débats politiques. Nous sommes attachés à la transparence et à la neutralité dans nos décisions de financement.",
     "fil_social": [
-      "📢 Le CNC publie aujourd’hui la liste complète des projets financés par CNC Talent. Transparence totale. 👉 cnc.fr/transparence #CNC #Transparence",
-      "💡 Saviez-vous que les aides CNC Talent sont attribuées par un jury indépendant de 12 professionnels ? Découvrez leurs noms et critères sur cnc.fr. #CNC #Création",
-      "⚠️ Certains messages circulent avec des montants erronés. Le CNC clarifie : les chiffres cités ne concernent pas CNC Talent. Vérifiez les faits sur cnc.fr/transparence. #VraiOuFake",
-      "📊 Le CNC a identifié des comptes relayant des messages dupliqués. Une procédure est engagée pour vérifier leur conformité. #RespectDesRegles",
-      "🗣️ Conférence de presse le 5 mai à 14h pour répondre à vos questions. Posez-les dès maintenant : transparence@cnc.fr. #CNC #Dialogue"
+      "Le CNC soutient la création cinématographique et audiovisuelle en France",
+      "Nous sommes attachés à la transparence et à la neutralité dans nos décisions de financement"
     ],
     "faq": [
       {
-        "question": "Pourquoi le CNC est-il accusé de financer l’extrême gauche ?",
-        "reponse": "Certains messages citent des montants attribués à des médias dans le cadre d’autres dispositifs que CNC Talent (ex. aides à la presse). Les aides CNC Talent sont attribuées sur critères artistiques et techniques, sans considération politique. La liste complète des bénéficiaires est disponible sur cnc.fr/transparence."
+        "question": "Pourquoi le CNC finance-t-il des médias d'extrême gauche ?",
+        "reponse": "Le CNC finance des projets de création cinématographique et audiovisuelle en fonction de leur qualité artistique et de leur potentiel de rayonnement, sans considération de leur orientation politique."
       },
       {
-        "question": "Qui compose le jury du programme CNC Talent ?",
-        "reponse": "Le jury est composé de 12 membres indépendants, issus de divers horizons professionnels (réalisation, production, technique). Leurs noms et parcours sont consultables sur le site du CNC."
-      },
-      {
-        "question": "Que fait le CNC contre les comptes qui amplifient des fake news ?",
-        "reponse": "Le CNC a identifié les comptes les plus actifs dans la propagation de messages dupliqués ou synchronisés (ex. @SirAfuera, @LeDindonFiscal). Une procédure de signalement a été engagée auprès de Twitter/X pour vérifier leur conformité aux règles de la plateforme."
+        "question": "Quels sont les critères de sélection pour les financements du CNC ?",
+        "reponse": "Les critères de sélection sont basés sur la qualité artistique, la originalité et le potentiel de rayonnement des projets."
       }
     ],
     "elements_langage": [
-      "**Transparence** : Le CNC publie aujourd’hui la liste complète des projets financés par CNC Talent, avec les montants et les critères d’attribution.",
-      "**Indépendance** : Les aides sont attribuées par un jury de 12 professionnels, sans considération politique ou idéologique.",
-      "**Dialogue** : Un numéro vert (0 800 00 123 45) et une adresse mail (transparence@cnc.fr) sont à votre disposition pour toute question.",
-      "**Respect des règles** : Le CNC a signalé aux plateformes les comptes relayant des messages dupliqués ou non conformes.",
-      "**Clarté** : Les montants cités dans l’espace public ne concernent pas CNC Talent. Consultez les faits sur cnc.fr/transparence.",
-      "**Action** : Une conférence de presse est organisée le 5 mai à 14h pour répondre à vos questions en direct.",
-      "**Neutralité** : Les aides sont attribuées sur la base de la qualité artistique, de la faisabilité technique et du potentiel d’impact.",
-      "**Réactivité** : Le CNC prend acte des débats et agit pour rétablir la confiance via des données factuelles et sourcées."
+      "Le CNC est un organisme public qui soutient la création cinématographique et audiovisuelle en France",
+      "Nous sommes attachés à la transparence et à la neutralité dans nos décisions de financement"
     ]
+  },
+  "livrables_audit": [],
+  "served_by": {
+    "deepseek/deepseek-chat": 6,
+    "groq/llama-3.1-8b-instant": 2,
+    "groq/llama-3.3-70b-versatile": 1
   }
 }

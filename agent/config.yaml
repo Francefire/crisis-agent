@@ -3,6 +3,14 @@
 # hard-coded column names, so the same agent runs on any tweet corpus.
 # To adapt to a new dataset, remap the right-hand column names below.
 
+# Optional LLM policy. `provider_priority` sets the order providers are tried
+# (best-first); each run's key-rotation/fallback walks it, so one run can span
+# several providers' quotas. Env LLM_PROVIDER_PRIORITY overrides this; if both are
+# absent it falls back to [LLM_PROVIDER, LLM_FALLBACK_PROVIDER]. Model candidates,
+# per-provider keys, and scores live in providers.py / .env — not here.
+# llm:
+#   provider_priority: [deepseek, groq, mistral, gemini]
+
 dataset:
   path: Dataset/data.xlsx        # relative to project root
   # sheet: 0                     # optional; default first sheet
