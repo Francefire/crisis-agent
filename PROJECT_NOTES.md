@@ -1,139 +1,115 @@
 # Datathon — Ultia × CNC — Project Notes
 
-Operational notes so any session can pick up where we left off. Working dir: `/home/moto/Documents/datathon` (not a git repo).
+Compact current-state summary so any session can pick up fast. Working dir:
+`/home/moto/Documents/datathon` (git repo; remote `origin` = crisis-agent on GitHub).
+**Full chronological history + rationale → [`docs/dev-log.md`](docs/dev-log.md)** (read
+on demand only). Design specs → `docs/superpowers/specs/`. Rendered decks →
+`docs/outputs/`.
 
-## The challenge (short)
-Nexa 2-day datathon: "Gérer une crise virale avec des agents IA" — the **Ultia × CNC** affair (mars–avril 2026).
-Mission = (1) understand/explain the crisis, (2) imagine automatable responses, (3) build & orchestrate ≥1 AI agent, demo on the corpus.
-It is **NOT fake news** — facts are real. Analyse the **dynamic** (who amplifies, how, how fast). Neutral tone.
-5-axis grid: Acteurs · Narratifs · Propagation · Coordination · Sémantique.
-Day-1 deliverable = slides (grid + timeline + key figures) + a simple agent on a sample. Day-2 = end-to-end agent demo + slides + 10-min pitch.
+## The challenge
+Nexa 2-day datathon: "Gérer une crise virale avec des agents IA" — the **Ultia × CNC**
+affair (mars–avril 2026). Mission = (1) understand/explain the crisis, (2) imagine
+automatable responses, (3) build & orchestrate ≥1 AI agent, demo on the corpus.
+**NOT fake news** — facts are real; analyse the *dynamic* (who amplifies, how, how
+fast), neutral tone. 5-axis grid: Acteurs · Narratifs · Propagation · Coordination ·
+Sémantique.
 
 ## Data
-- `Dataset/data.xlsx` — 35 396 rows × 30 cols, all French, 2026-03-19 → 2026-05-01.
-- `Dataset/dictionnaire_bdd.xlsx` — column dictionary.
-- Key cols: Date, Author, Full Text, `message_normalizer` (cleaned), Likes/Comments/Shares/Impressions/Reach, X Followers/Following/Posts/Verified, `X Reply to`, `X Repost of` (holds the **original tweet URL** — extract handle via regex `twitter\.com/([^/]+)/status`), Engagement Type, Hashtags (mostly empty).
-- Canonical numbers live in `analysis/out/key_figures.json` (regenerate with eda.py).
+- `Dataset/data.xlsx` — 35 396 rows × 30 cols, French, 2026-03-19 → 2026-05-01.
+- Key cols: Date, Author, Full Text, `message_normalizer` (cleaned), engagement metrics,
+  follower proxies, `X Reply to`, `X Repost of` (original tweet URL — handle via regex
+  `twitter\.com/([^/]+)/status`), Engagement Type. Column ROLES are mapped in
+  `agent/config.yaml` (schema-driven → tools run on any tweet corpus).
+- Canonical numbers: `analysis/out/key_figures.json` (from `analysis/eda.py`).
 
-## Key findings (Day-1 analysis)
-- 35 396 msgs / 10 437 accounts. **86 % retweets** (30 368); only 671 originals (1,9 %). It's an amplification cascade, not a debate.
-- Timeline: 4-day deflagration. Peak **27 mars = 7 303 msgs** (then 26/29/28 mars). Collapses after ~30 mars.
-- Amplified accounts (most retweeted, handle from `X Repost of`): @SirAfuera 1852, @LeDindonFiscal 1544, @ojim_france 1254, @jon_delorraine 1083, @anatolium 1065, @charlesvillaa 1000, @SirenesFR 856, @EugenieBastie 791; also fxbellamy, MarionMarechal, LeCNC. Only **9,1 % verified**.
-- Narratives (keyword freq): money frame (cnc, argent, euros, fonds, subventions, millions, aides), political-camp frame (gauche/extrême/droite/français), who-gets-funded frame (talent, streameuse, créateurs, cinéma, film).
-- Coordination: top messages retweeted **500–654× verbatim**; synchronized same-minute bursts; 5 688 accounts post exactly 1 msg.
-- Sentiment: 66 % neutral / 31 % negative / 3 % positive; negativity tracks the volume spike.
+## Key findings (corrected)
+- 35 396 msgs / 10 437 accounts. **86 % retweets** (30 368); 1.9 % originals → an
+  amplification cascade, not a debate. Only **9.1 % verified**.
+- Timeline: 4-day deflagration, peak **27 mars = 7 303 msgs**, collapses after ~30 mars.
+  Ignition→peak ≈ **7 h**, **+28 %/h**, doubling ≈ 2.8 h; reach peaks **2 h before**
+  volume (big sources fire before relays).
+- Top amplified: @SirAfuera 1852, @LeDindonFiscal 1544, @ojim_france 1254, @jon_delorraine
+  1083, @anatolium 1065, @charlesvillaa 1000, @SirenesFR 856, @EugenieBastie 791.
+- Narratives: money frame · political-camp frame · who-gets-funded frame; framing drifts
+  ("argent public/impôts" peaks 29 mars, days after the person/camp frames).
+- **Coordination = synchronised RETWEET amplification, NOT copy-paste.** The ~82 %
+  "verbatim duplication" counts retweets (identical by nature). True copy-paste
+  (`copy_paste_rate_pct`, ORIGINAL/QUOTE only) ≈ **0.6 %**. What's real: 30.1 % of copies
+  land <60 s from another, **×3.7 vs a uniform null** (`synchrony_lift_vs_uniform`) —
+  suggestive, not proof. Network = broad mass-relay (one giant component), not tight
+  cells. Neutral tone: "signals compatible with coordination," never "bots proven."
+- Sentiment: 66 % neutral / 31 % negative / 3 % positive; negativity tracks the spike.
 
-## Environment / toolchain (the tweaks that made things work)
-- **Python:** system `python3` is PEP-668 "externally managed" → `pip install` fails. Use the venv:
-  - `.venv/` — created with `python3 -m venv .venv`; run everything as `.venv/bin/python`.
-  - Installed: pandas 3.0.3, openpyxl, matplotlib, numpy, python-pptx 1.0.2, pillow.
-- **Node:** v22; `pptxgenjs` 1.0.2 installed locally (`node_modules/`). Build decks with `node analysis/<script>.js`.
-- **QA rendering:** LibreOffice `soffice` + poppler `pdftoppm` are available:
-  - `soffice --headless --convert-to pdf <file>.pptx`
-  - `pdftoppm -jpeg -r 120 <file>.pdf slide` → slide-1.jpg … (inspect visually; use `-f N -l N` for one page).
-  - matplotlib uses DejaVu Sans (no accents issues); avoid odd glyphs.
+## Repo layout
+- `agent/` — the AI-agent pipeline (see below).
+- `analysis/` — EDA + deck builders (`eda.py`, `build_*_charts.py` → `figures*/`,
+  `build_*_deck.js` via pptxgenjs). `out/key_figures.json` = canonical numbers.
+- `docs/outputs/` — rendered decks (pptx/pdf). `docs/superpowers/specs/` — design specs.
+  `docs/dev-log.md` — full history.
+- `Dataset/` — the corpus.
 
-## Deck build pipeline (final = v3)
-1. `analysis/eda.py` → `analysis/figures/` + `analysis/out/key_figures.json` (all numbers).
-2. `analysis/build_charts_v2.py` → `analysis/figures_v2/` : `timeline.png`, `amplified.png`, `terms.png` (transparent PNGs, dark labels → sit on white cards).
-3. `analysis/build_assets_v3.py` → `analysis/figures_v3/` : `hero.png`, `hero_wide.png`, `sentiment_donut.png`, `engagement_donut.png`.
-4. `analysis/build_deck_v3.js` (pptxgenjs) → `Datathon_Ultia_CNC_Jour1_v3.pptx` → export PDF for QA.
-- Backups: `..._v1.pptx` (python-pptx, first draft), `..._v2.pptx` (pptxgenjs, no imagery), `..._v3.pptx`/`.pdf` (final, image-rich).
+## Agent architecture (`agent/`)
+Pipeline: **Analyste → Relecteur → Stratège → Rédacteur**. Only the Analyste touches the
+data (deterministic tools); downstream stages reason ONLY over its facts (grounding
+contract: no new numbers/@handles).
+- `tools.py` — `Corpus` class: loads config+xlsx once; 12 deterministic pandas/NLP tools
+  (profile, timeline+velocity, narratives, narrative_timelines, coordination,
+  coordination_network, semantique, breakdown, actor, engagement_quality, reply_network,
+  sample). Every fact the LLM cites comes from here. No API key needed.
+- `providers.py` — **single registry of LLM providers** (gemini/groq/mistral/deepseek):
+  key env, lazy chat class, key kwarg, extra kwargs, live model-list fetcher, per-tier
+  scored candidates, and an optional `thinking` capability. Adding a provider = one entry.
+  Also the one key parser (`keys()`), supporting inline priority `key|N`.
+- `models.py` — model *selection policy*: availability cache (24 h → `out/model_cache.json`),
+  env-preferred override, best-first ordering. Reads candidates from `providers.py`.
+- `llm.py` — the **LLM engine** (provider/model selection, per-provider rate limiter,
+  key rotation on TOKEN-quota 429, provider+key fallback chain, `build_model/structured/
+  agent`, `build_thinking_agent`). Provider priority: env `LLM_PROVIDER_PRIORITY` >
+  config.yaml `llm.provider_priority` > `[LLM_PROVIDER, LLM_FALLBACK_PROVIDER]`.
+- `analyste.py` — **domain layer**: the 12 `@tool` wrappers, `RapportAnalyste` schema,
+  system prompt, per-run tool-call budget (`LLM_TOOL_BUDGET_TOTAL=16`/`_PER=3`; blocks
+  over-exploration), `run_diagnostic()` core, and `--deep`/`--thinking` mode.
+- `reviewer.py` — the Relecteur: (A) deterministic grounding auditor (every @handle must
+  exist in corpus; every number must trace to a tool output; neutral-tone gate; substance
+  floor) + (B) advisory LLM critic. Hard errors trigger ONE Analyste correction pass.
+- `orchestrateur.py` — the pipeline runner. Downstream agents are **declarative `Stage`s**
+  (`STAGES` list); adding an agent = one `Stage(key, name, schema, prompt, inputs, tier)`.
+- `runlog.py` — run logging → `out/run.log` + stderr; `SERVED BY` tally proves which
+  provider/model/key served each call.
 
-## Design system
-- Layout `LAYOUT_WIDE` (13.333 × 7.5"). Dark "investigation" theme.
-- Colors (hex, no `#`): INK `0B1020`, PANEL `1B2340`; accents VIOLET `7C3AED`, CYAN `22D3EE`, CORAL `FF5C5C` (reserve coral for negatives/alerts); text LIGHT `E5E7EB`, MUTED `94A3B8`.
-- Fonts: **Georgia** headers (serif, editorial) + **Calibri** body. Every content slide carries a chart or image; no empty bands; single-color honest charts (no rank-based color coding implying false categories).
-- pptxgenjs gotchas: no `#` in hex, no 8-char hex opacity, fresh shadow object per call, `bullet:true` (not unicode •).
+## How to run
+```bash
+.venv/bin/python agent/verify_tools.py                 # 60/60 deterministic tool checks
+.venv/bin/python agent/analyste.py "<question>"        # diagnosis only
+.venv/bin/python agent/orchestrateur.py "<question>"   # full pipeline
+.venv/bin/python agent/orchestrateur.py "<q>" --cache  # reuse last diagnostic
+.venv/bin/python agent/orchestrateur.py "<q>" --deep   # wider budget; DeepSeek reasoning
+node analysis/build_day2_deck.js                       # rebuild the master deck
+```
+`--deep`/`--thinking`: raises tool budget (30/5) + recursion (80) + a depth prompt suffix;
+on DeepSeek it enables true reasoning (`deepseek-v4-flash`), else degrades to normal.
 
-## Getting the deck into Canva  → see memory [[canva-import-route]]
-- Manual Canva PPTX import **errors** on this account. Working route:
-  1. User uploads the file (sandbox blocks me): `! curl -F "reqtype=fileupload" -F "time=1h" -F "fileToUpload=@/home/moto/Documents/datathon/Datathon_Ultia_CNC_Jour1_v3.pptx" https://litterbox.catbox.moe/resources/internals/api.php` → direct `https://litter.catbox.moe/...` link (auto-deletes 1h).
-  2. Plugin `import-design-from-url` with that URL → imports as **fully editable** native Canva elements, pixel-faithful.
-- Avoid Canva `generate-design` for this data deck — it drops real figures, invents placeholder charts, makes text-only slides.
-- **Final Canva design:** id `DAHOOoOFvsE` — edit https://www.canva.com/d/xvDVciAFQ-CC3PQ . (Stale designs to delete manually: `DAHOOSLsGB4`, `DAHOOh03Z54`.)
+## Config / env (`.env`, see `.env.example`)
+- `LLM_PROVIDER` (+ `LLM_FALLBACK_PROVIDER`) or `LLM_PROVIDER_PRIORITY=a,b,c`.
+- Keys: `<PROVIDER>_API_KEY(S)` — one or many (comma/space/newline); inline priority `key|N`.
+- Current default: `LLM_PROVIDER=mistral` + fallback `groq` (mistral-large has the context
+  for the tool-heavy Analyste; Groq free tier 413s on it → falls back). DeepSeek off by
+  default (paid, but 1M context + reasoning; use when `LLM_PROVIDER=deepseek` or `--deep`).
+- Tunables: `LLM_RPS` (0.5), `LLM_MAX_RETRIES` (6), `LLM_TOOL_BUDGET_TOTAL/_PER`,
+  `LLM_RECURSION_LIMIT`, `LLM_<PROVIDER>_<TIER>` model override.
 
-## Analyste agent (see memory [[analyste-agent-plan]])
-- **Phase 1 DONE** — deterministic tool layer, no LLM key needed. Lives in `agent/`:
-  - `config.yaml` — column-role schema (text/author/timestamp/engagement/repost/sentiment…) + French stopwords + repost-handle regex. Remap columns here to run on any tweet corpus.
-  - `tools.py` — `Corpus` class loads config+xlsx once; tools: `profile(top)`, `timeline(freq,top)` [peaks + patient-zero + amplified-onset ignition order], `narratives(k,dedupe)` [TF-IDF+k-means; dedupe=True clusters DISTINCT texts, weights by volume → n_messages + n_distinct_texts + top_terms + real samples + sentiment mix], `sample(contains/author/amplified/engagement/sentiment/date/…, n, sort)` [verbatim grounding]. All return JSON-serialisable dicts. CLI: `.venv/bin/python agent/tools.py {profile|timeline|narratives|sample} …`.
-  - `verify_tools.py` — asserts tool output == `key_figures.json`; **15/15 pass** (run: `cd agent && ../.venv/bin/python verify_tools.py`).
-  - New venv pkgs: scikit-learn 1.9, pyyaml, python-dotenv.
-  - Note: narratives has one dominant macro-cluster (~50% "CNC finances cinema/talent w/ public money") even at high k — genuine (retweets share vocab); LLM can raise k or drill via sample().
-- **Phase 2 DONE** — LLM wired, working end-to-end on Gemini.
-  - `agent/analyste.py` — single tool-using agent via `langchain.agents.create_agent` (LangChain **1.3.11**). Model = `ChatGoogleGenerativeAI` `gemini-2.5-flash`, temp 0. Key: `GEMINI_API_KEY` in `.env` (loaded via python-dotenv; `.env.example` provided). Swap provider = edit `build_model()`.
-  - 4 tools = thin `@tool` wrappers over `Corpus` (docstrings in FR are the tool specs). `timeline` drops the raw `series` to stay compact.
-  - Structured output via `response_format=RapportAnalyste` (Pydantic): synthese / faits_cles / narratifs[nom,resume,volume_pct,exemple] / dynamique / limites.
-  - System prompt enforces: fait vs narratif vs dynamique, neutral tone, every number/@handle from a tool result, "preuve insuffisante" reserved for a single missing fact (never a whole section), always fill all sections from collected tool data, use `timeline` for propagation, raise k if a cluster >50%.
-  - Verified: profile-type Q → all numbers match key_figures; narratives Q → 7 grounded narratives w/ real sample tweets + correct volume shares + rich timeline-based `dynamique`. CLI: `.venv/bin/python agent/analyste.py "<question>"`.
-  - Packages added: langchain 1.3.11, langchain-google-genai, langgraph.
-- **Phase 3a DONE** — Analyste now covers the FULL 5-axis grid.
-  - Two new deterministic tools in `tools.py`: `coordination(min_dup,top)` (verbatim-dup messages + same-minute bursts + verbatim-duplication rate 82.4% + activity concentration) and `semantique(freq)` (sentiment mix + per-period + negative-share on peak vs overall + most-negative period). CLI subcommands added.
-  - `verify_tools.py` extended → **20/20 pass** (dup counts 654…, burst 7/7/6…, sentiment all match key_figures).
-  - Wired into `analyste.py` as `@tool`s; `RapportAnalyste` gained `coordination` + `sentiment` fields; system prompt now maps all 5 axes to their tools (Acteurs=profile, Narratifs=narratives, Propagation=timeline, Coordination=coordination, Sémantique=semantique). Tested: "organique ou coordonnée + sentiment?" → 4 tool calls, grounded coord+sentiment verdict, all figures correct.
-- **Phase 3b DONE** — orchestration `agent/orchestrateur.py`: **Analyste → Stratège → Rédacteur**.
-  - Analyste = tool-grounded diagnosis (reuses analyste.py). Stratège = structured LLM call → `PlanStrategie` (objectifs/audiences/axes_reponse[justifiés par un fait]/risques/kpis/posture). Rédacteur = structured LLM call → `LivrablesRedaction` (communiqué / fil_social ≤280 / faq / éléments de langage). Client configurable (default "le CNC").
-  - Grounding contract: Stratège & Rédacteur have NO corpus access; they may only use facts in the Analyste's report (no new numbers/@handles). Only the Analyste touches data.
-  - CLI: `.venv/bin/python agent/orchestrateur.py "<question>"` → prints diagnostic + plan + livrables. `run_pipeline(question, client)` returns the full dict.
-  - **Gemini free-tier quota WALL (confirmed):** this project's free tier caps **every** model (2.5-flash AND 2.5-flash-lite) at **20 req/day** (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). One Analyste run ≈ 5 calls, full pipeline ≈ 7 → exhausts in ~3 runs/day. Individual agents proven working earlier today; pipeline blocked only by quota.
-  - **Mistral free-tier rate-limit — diagnosed + FIXED (2026-07-02):** on Mistral (`mistral-small-latest`, current `.env` provider) the wall is **tokens-per-minute**, NOT req/day or req/sec (verified: 20 rapid tiny calls fine; a full standalone Analyste fine). The orchestrator runs 3 stages back-to-back and the ReAct Analyste resends its growing history each step, so big tool blobs blow the rolling-minute token budget → 429 (code 1300) on the next call (typically Stratège). Two-part fix: (1) `analyste.build_model()` now attaches a **process-shared `InMemoryRateLimiter`** (`LLM_RPS`, default 0.5 = 1 call/2 s, shared across all 3 stages) + `max_retries` backoff (`LLM_MAX_RETRIES`, default 6) — rate-limiting alone was **insufficient** (Analyste completed but pipeline still 429'd at Stratège: proves it's tokens not requests); (2) the token lever — LLM-facing `@tool` wrappers now TRIM (mirror `timeline`'s `series` pop): `narrative_timelines` drops per-cluster `series`, `coordination` drops `burst_size_over_time` + caps top lists, `coordination_network` caps to 5 clusters / 3 accounts each → **−54.6 %** payload (~3.8k tokens saved per resend). Full uncached pipeline then completes end-to-end (EXIT=0). Full data still lives in `tools.py`/charts; only the LLM view shrank, so `verify_tools.py` stays 41/41.
-  - **Multi-provider failover — one run across TWO quotas (2026-07-02):** `LLM_FALLBACK_PROVIDER` env — when set, every LLM call (agent loop AND structured Stratège/Rédacteur) is wrapped `primary.with_fallbacks([secondary])`, so a 429/error on the primary transparently retries on the second provider mid-run. `build_model()`/new `build_structured(schema)` build the chain via `_leaf_models()`; each provider gets its OWN `InMemoryRateLimiter` (independent limits); the primary uses only 2 retries when a fallback exists so it flips fast instead of burning backoff. `.env` now = **`LLM_PROVIDER=groq` + `LLM_FALLBACK_PROVIDER=mistral`** (Groq's generous free tier carries the run, Mistral is insurance). Orchestrator's `run_stratege`/`run_redacteur` switched from `build_model(...).with_structured_output(...)` to `build_structured(...)`. Verified offline: chain = ['groq','mistral'], both agent + structured runnables are RunnableWithFallbacks, `create_agent` binds tools through the wrapper.
-  - **Multi-provider support added** (robustness + quota headroom): `analyste.build_model()` now dispatches on `LLM_PROVIDER` env = `gemini|groq|mistral` (lazy imports; keys `GEMINI_API_KEY`/`GROQ_API_KEY`/`MISTRAL_API_KEY`; model override `LLM_MODEL`). `langchain-groq` + `langchain-mistralai` installed. `.env.example` updated. **To run the full pipeline today: set `LLM_PROVIDER=groq` + `GROQ_API_KEY` in `.env`** (Groq free tier = thousands/day; default model llama-3.3-70b-versatile).
-  - **Diagnosis caching:** orchestrator writes `agent/out/diagnostic.json` after stage 1 and `pipeline_result.json` at the end; `--cache` flag reuses the saved diagnostic (skip the 5-call Analyste when iterating on Stratège/Rédacteur). Import-verified end-to-end (no API).
-- **Propagation deep-dive DONE** (chosen as the axis to "make perfect" — brief calls la dynamique "le cœur de l'analyse"). Enriched `tools.py`:
-  - `timeline()` gained `window=(from,to)` (zoom), `weight=count|reach|impressions`, `velocity=True` → **`velocity` block** (onset=first hour ≥10% peak, time_to_peak, growth_rate/hour, **doubling_time_hours**, **half_life_hours**, core_hours_above_50pct; computed on hourly grid regardless of display freq) + always-on **`reach` block** (audience curve + `reach_vs_volume_lead_periods`: <0 ⇒ audience peaks BEFORE volume).
-  - New tool `narrative_timelines(k,freq,window)` — reuses `narratives()` TF-IDF+kmeans to label every row, per-cluster volume series + **`lead_lag`** (framings ordered by peak time).
-  - **Findings:** ignition 09:00→peak 16:00 (26 mars) = **7h to peak**, **+28%/h**, **doubling ≈2.8h**, half-life 7h; reach peaks **2h before** volume (sources fire before relays); framing DRIFTS — Ultia/camps-politiques peak 26 mars, "argent public/impôts" peaks **29 mars** (days later).
-  - `verify_tools.py` → **26/26** (added velocity/reach/narrative_timelines self-consistency checks; legacy 20 untouched). Wired into `analyste.py` (timeline wrapper defaults freq='h',velocity=True; new `narrative_timelines` @tool; system prompt now directs the PROPAGATION axis to cite speed metrics + lead_lag). Orchestrator inherits automatically.
-- **Day-2 Propagation slide DONE** — `analysis/build_propagation_charts.py` (imports Corpus → `analysis/figures_prop/velocity.png` + `narrative_drift.png`) and `analysis/build_propagation_deck.js` → `Datathon_Ultia_CNC_Propagation.pptx` (standalone; merge into Day-2 deck). In Canva as its own design: id `DAHOPZ2EhRI`, edit https://www.canva.com/d/bnMy2FkwzUFPW9y . Slide = velocity dual-curve (volume vs reach) + 3 stat callouts (7 h montée, ×2/2,8 h, 7 h demi-vie) + "audience précède le volume de 2 h". Honest-scope note: daily narrative-drift is weak (all thematic frames peak 27/03; only the person-frame leads 26/03), so the drift chart was NOT put on the slide — velocity is the headline.
-- **Coordination deep-dive DONE** (all 4 directions A+B+C+D built; user locked: Δ=60 s, near-dup char 3-gram Jaccard ≥0.8, build network now). Enriched `coordination()` with **additive** blocks (legacy 6 keys untouched):
-  - **A · synchrony** (`synchrony`): Δ=`delta_seconds`(60) window → `coordination_score_pct`=**30.1 %** (share of duplicated-text copies landing <60 s from another copy), `top_synchronized_texts` (within-Δ % + median inter-arrival, e.g. CNC statement 509 copies, 69.9 % <60 s, médiane 48.5 s), `burst_size_over_time` (max Δ-burst/day; peaks **26 mars = 7**, matches legacy same-minute max → honest, no overclaim).
-  - **B · near_duplicates** (`near_duplicates`): char-3gram Jaccard ≥0.8 union-find over top-500 duplicated texts → merges templated variants. Real find: the CNC "prend connaissance…" statement relayed as **3 variants** (@LeCNC + @SirenesFR "ALERTE INFO" + @SirAfuera "ALERTE") totalling 710 msgs.
-  - **D · account_behaviour** (`account_behaviour`): PROXIES (no creation date) — single-msg share 54.5 %, following>followers 73.2 %, `low_footprint_amplifiers`=1535 (14.7 %; single-msg + X Posts ≤P25 + followers ≤median), verified share among duplicators 7.3 %. Definition string ships in the payload + `limites`.
-  - **C · new tool `coordination_network(min_dup,delta_seconds,min_edge_weight=1,top_clusters)`** (networkx): edge = two accounts posting same verbatim text within Δ; weight = shared synchronised windows; weighted **Louvain**. Default w≥1 → 4275 nodes / one 2824-account giant component / 597 communities (largest ≈138, ~8 % verified, ~24 % single-msg). At **w≥2 only 22 nodes / size-2 pairs** → honest headline: coordination is **broad mass-relay, not a tight repeating ring**.
-  - Gotcha fixed: pandas 3.0 stores datetimes at **µs** resolution → use `.values.astype("datetime64[s]").astype("int64")` for unix seconds (not `astype("int64")//1e9`).
-  - `verify_tools.py` → **41/41** (added 15 synchrony/near-dup/account/network self-consistency checks; legacy 26 untouched). Wired into `analyste.py`: `coordination` docstring + new `coordination_network` @tool, `TOOLS` list, `RapportAnalyste.coordination` desc, and SYSTEM_PROMPT COORDINATION block (neutral-tone guardrail + "comptes récents = proxy" caveat). New dep: **networkx 3.6.1**. CLI: `coordination --delta-seconds/--sim-threshold`, new `coordination-network` subcommand.
-- **NEXT queued: Day-2 Coordination slide** — mirror Propagation: charts script (import Corpus → `analysis/figures_coord/`) + `build_coordination_deck.js`. Suggested slide = burst-size-over-time timeline + near-dup template triplet + coordination-score / low-footprint callouts + w≥1-vs-w≥2 network contrast. Headline stays honest: synchronised relay (30 % <60 s) + templated variants, but a diffuse mesh not isolated cells.
-- **Cross-check tools + Reviewer DONE (2026-07-02)** — broadened the toolset for triangulation and added a 4th pipeline stage.
-  - **4 new deterministic tools in `tools.py`** (all with CLI subcommands + wired as `@tool` in `analyste.py`, system prompt gained a CROISEMENT/RECOUPEMENT block):
-    - `breakdown(by, metrics)` — composability primitive: cross-tab any metric (dup_rate, synchrony_score, verified_share, low_footprint_share, mean_reach, mean_organic_engagement, volume) by sentiment|engagement|verified|day|hour, PLUS a `gaps` block (spread + which segment holds each extreme). Directly answers "copy/bot rate by sentiment" etc. Finding: dup_rate neutral 87.5 % > positive 81.9 % > negative 78.8 %, synchrony ~27–30 % across all three (copy/bot patterns NOT concentrated in one sentiment); by engagement, ORIGINAL dup 1.2 % but synchrony 75 %.
-    - `actor(handle)` — multi-source account dossier (authored activity + engagement/sentiment mix + follower/posts proxies + who it replies to/amplifies, AND relays received + distinct relayers + replies received/negativity). E.g. @SirAfuera: 0 authored, 1852 relays by 1129 distinct accounts.
-    - `engagement_quality()` — independent authenticity signal: organic (likes+comments+shares) per reach, overall/by-engagement/dup-vs-unique, + high-reach/zero-organic anomalies. Note RETWEET rows carry reach but 0 organic (attributed to original) → dup content shows 0.0; interpret with care.
-    - `reply_network()` — conversation structure from `X Reply to` (new `_reply_handle` parsed at load, same URL regex): reply share 10.2 %, top targets + their negativity (e.g. @TwitchGauchiste 109 replies, 60.6 % négatif; @LeCNC 92, 53.3 %).
-  - `verify_tools.py` → **55/55** (added 14 self-consistency checks for the 4 tools; legacy 41 untouched).
-  - **`agent/reviewer.py` (4th stage, user chose "audit + critique")**: (A) DETERMINISTIC grounding auditor (no LLM/quota) — extracts every @handle + substantive number (≥3 digits or a decimal; skips years/small ints) from the report; flags @handles absent from the corpus (author∪amplified∪replied-to) as ERRORS, numbers absent from this run's tool outputs as warnings, and neutral-tone violations (bot/automatisé/prouvé/orchestré); for the Rédacteur, a containment guardrail (no @handle/number absent from the diagnostic — the Phase-3c guardrail, now built). (B) LLM CRITIC (`RevueCritique` structured call like Stratège) — axis coverage, over-interpretation, facts to cross-check, incoherence, tone, verdict. `review()` consolidates a verdict; orchestrator runs ONE correction pass (re-invokes Analyste with `corrections_message`) if there's a hard error or the critic says `revision_requise`.
-  - **`orchestrateur.py`** now 4 stages: Analyste → **Relecteur (audit+critique, ≤1 reprise)** → Stratège → Rédacteur (+ final livrables audit). `run_analyste` returns tool_outputs too; both diagnostic + tool_outputs cached (`out/tool_outputs.json`) so `--cache` keeps the auditor working.
-  - **Ran live end-to-end twice (2026-07-03, groq)** on the copy-paste-by-sentiment question → grounded answer: dup_rate neutral 87.5 % > positif 81.9 % > négatif 78.8 % (écart 8,7 pts), synchronie 26.8–29.5 %, comptes faible-empreinte 3.8–5.4 % → copier-coller/bot PAS concentré sur un sentiment. Full plan + communiqué produced.
-  - **Reviewer tuning after the live runs (all offline-verified, 55/55 intact):**
-    1. Loop-back now triggers on **deterministic HARD ERRORS only** (fabricated @handle / livrable leak) — a blind re-run fixes those; the LLM critic became **advisory** (still generated + displayed, `critique_verdict`, but doesn't force an expensive non-converging re-run). The 1st live run looped on the critic's subjective verdict and re-ran without resolving; now it doesn't.
-    2. Number-grounding is tolerant of benign derivations: a ratio written as a percent (×100/÷100) and a **pairwise gap** (a−b of two sourced numbers) count as grounded → killed the 5 spurious `ungrounded_number` warnings (e.g. 0.00696→0,696 %, 81,9−78,8=3,1).
-    3. `@handles` are stripped before number extraction (so `@Compte404` no longer emits a phantom "404").
-    5. **Substance gate (2026-07-03, after a bad run):** a strategy-phrased question (« Comment le CNC devrait gérer cette crise ? ») made the Analyste short-circuit — it called 5 tools but wrote generic PR advice with ZERO figures/@handles, and the auditor passed it `valide` because there was nothing to falsify. Fix: (a) `audit_report` now counts grounded facts (present-in-corpus @handles + numbers traced to tool outputs); below `MIN_GROUNDED_FACTS=3` → **hard error `empty_diagnosis`** → triggers the correction loop; (b) SYSTEM_PROMPT hardened — even for response/gestion questions the Analyste must DIAGNOSE (profile + axes, figures only), never advise (Stratège's job). Live re-run of the same question → 13 tool calls, fully grounded diagnosis, `audit=valide` (prompt fix alone sufficed; gate is the deterministic net). Also extended the tone scan to the `dynamique` field.
-    4. **Bug fixed:** `_numeric_values` (reference-side parser) was not French-aware → read `29,5` as `29` + `5`, causing a false livrable-leak flag; now uses `_NUM_RX` + comma/space normalisation (`re.sub(r"\s","")`), so `29,5 %`/`1 852` parse as single values. Genuine fabrications still caught.
-- **Day-2 MASTER pitch deck DONE (2026-07-03)** — `analysis/build_day2_deck.js` → `Datathon_Ultia_CNC_Jour2.pptx` (13 slides, same v3 dark theme + shared helpers). Arc = Problem → Agents → Response: (1) cover, (2) crise en bref, (3) mission + grille 5 axes, (4) **Propagation** (finished, reused), (5) **Coordination** (finished, reused), (6) section « Les agents », (7) architecture 4 agents (Analyste→Relecteur→Stratège→Rédacteur + contrat d'ancrage), (8) ancrage & garde-fous (55/55), (9) démo (dashed placeholder zone for CLI capture), (10) section « La réponse », (11) livrables (communiqué/fil/FAQ/éléments de langage), (12) impact + limites, (13) clôture. New helpers: `sectionDivider`, `node`+`arrow` (pipeline), `axisCard`, `bullets`, `placeholder`. QA'd all 13 via soffice→pdftoppm. **In Canva as its own design: id `DAHOUokT-08`, edit https://www.canva.com/d/THrdJLWNsmtxkd-** (imported via litterbox→import-design-from-url, the proven route; the single-slide Propagation design `DAHOPZ2EhRI` is now folded into this master deck).
-- **⚠ Coordination "copier-coller" CORRECTION DONE (2026-07-03)** — user (rightly) challenged the copy-paste claim. **Root problem:** `coordination()` computed `verbatim_duplication_rate_pct` (82.4 %) over ALL rows, but `message_normalizer` keeps the `"rt @ handle …"` payload, so the metric counted **retweets** (86 % of corpus) as "copies." Verified: the top duplicated texts are **100 % RETWEET**; `retweet_share_of_duplicated_pct` = **100 %**. **True copy-paste** (identical text authored as ORIGINAL/QUOTE, retweets+replies excluded) = **0.6 %** (`copy_paste_rate_pct`, new key) — and the little that exists is press outlets sharing headlines + one 3-account quote talking-point + single-account self-replies. So "82 % copier-coller" was an artifact; the agent's diagnostic parroted it ("82,4 % copies exactes") because the tool never told the LLM the engagement type. **What survives:** synchronised retweeting is real — 30.1 % of copies land <60 s from another, **×3.7 the uniform-null** (copies spread evenly over each text's own ~25 h lifespan → only 8.1 % expected); new keys `expected_within_delta_uniform_pct` + `synchrony_lift_vs_uniform`. Caveat: uniform null is generous (organic retweeting is bursty too) → suggestive, not proof; a diurnal/cascade null is the rigorous next step. **Fixes shipped (all additive):** `coordination()` gained `retweet_share_of_duplicated_pct` / `copy_paste_rate_pct` / `copy_paste_definition` (legacy `verbatim_duplication_rate_pct` kept) + synchrony baseline keys; `verify_tools.py` **55→60/60**; slide 5 reframed ("amplification synchronisée par retweet · ×3,7 · vrai copier-coller 0,6 % · concentration pas cellules") in `build_day2_deck.js`. **Corrected Canva deck: id `DAHOUyzCplc`, edit https://www.canva.com/d/avHPYQwGPNNA3iu** (supersedes `DAHOUokT-08` — delete the old one). **Agent prompt fix DONE too:** `analyste.py` — `coordination` @tool docstring, SYSTEM_PROMPT COORDINATION block, and `RapportAnalyste.coordination` field now instruct the Analyste to DISTINGUER retweet-amplification (~82 %, `retweet_share_of_duplicated_pct` ≈ 100 %, never call it "copier-coller/copies exactes") from true copy-paste (`copy_paste_rate_pct` ≈ 0,6 %), and to cite the synchrony lift (`synchrony_lift_vs_uniform` ×3,7) not just the raw score. Verified the honest keys survive the LLM-facing trim (`burst_size_over_time` still popped). So a live demo run will now report the corrected framing. Remaining optional: a diurnal/cascade-aware synchrony null (my "A" is uniform-null only — generous baseline).
-- **LLM routing + run logging DONE (2026-07-03)** — after a "stronger Groq model" request that turned into a debugging saga.
-  - **Multi-key env (user-added, now the norm):** `<PROVIDER>_API_KEYS` (plural, comma/space separated) holds several keys; `analyste._keys()` reads singular+plural. `_leaf_models` builds one model per (provider,key); `_RotateOnTokenLimit` mixin rotates to the next key on a TOKEN-quota 429, retries same key on RPM/5xx, raises (→ fallback rotates) otherwise. **Root cause of the earlier "silent Mistral" mystery:** the key was in singular `GROQ_API_KEY` as `k1,k2,k3` → sent as ONE bad key → 401 → every run silently fell back to Mistral. Fixed by renaming to `GROQ_API_KEYS`.
-  - **`agent/runlog.py` (NEW) — the deliverable that made all this visible.** Logger → `agent/out/run.log` (append, timestamped) + concise stderr echo. The rotation mixin logs every LLM call as `LLM ✓/✗ <provider>/<model> key#<i>` with retry/rotation/fallback reasons; `ToolLogger` callback logs each `tool → name(args)`; orchestrator logs stage banners + a final `SERVED BY: {provider/model: n}` tally (proves who actually ran the pipeline). Wired into `analyste.ask` and `orchestrateur.run_analyste` via `config={"callbacks":[ToolLogger()]}`.
-  - **`--deep` / `--thinking` launch arg (2026-07-03):** a mode that WIDENS tool selection + reasoning. `analyste.py "<q>" --deep` (alias `--thinking`) and `orchestrateur.py "<q>" --deep`. In deep mode: tool budget **16/3 → 30/5** (total/per-tool), recursion **50 → 80** (`LLM_DEEP_BUDGET_TOTAL`/`_PER`/`LLM_DEEP_RECURSION`), and `DEEP_SUFFIX` is appended to the system prompt (reason about which axes/tools first; cover all 5 axes + ≥2 cross-checks via breakdown/actor/engagement_quality/reply_network). Shared helper `analyste.apply_depth(deep)->recursion_limit` sets the per-run budget; used by both `ask(question, tier, deep)` and orchestrator `run_analyste(question, deep)` / `run_pipeline(..., deep)`. **Chose exploration-depth over model-level reasoning mode** because the latter is fragile here (DeepSeek-V4 + gpt-oss `400` on thinking/json + forced tool_choice; per-provider param names differ) and would need edits to the hot files `llm.py`/`providers.py` that another session was editing. Verified: CLI parses, budgets switch (16/3→30/5, rec 50→80), 60/60 tool checks.
-    - **DeepSeek thinking mode — IMPLEMENTED (2026-07-03).** `--deep`/`--thinking` now enables DeepSeek's reasoning mode (verified vs api-docs.deepseek.com/guides/thinking_mode + Context7). Facts: thinking model = `deepseek-v4-flash`/`-pro` (NOT deepseek-chat); enable via `extra_body={"thinking":{"type":"enabled"}}` + `reasoning_effort="high"`; thinking supports AUTO tool-calls but NOT forced tool_choice (that's the `400` we hit); temperature ignored. Design (thinking as a declared provider CAPABILITY → future-proof):
-      - `providers.PROVIDERS["deepseek"]["thinking"] = {"model": "deepseek-v4-flash", "kwargs": {extra_body thinking, reasoning_effort}}`; `providers.thinking_spec(p)` returns it or None. Add thinking to another provider later = one dict entry.
-      - `llm.thinking_available(p)` + `llm.build_thinking_agent(tools, prompt, provider)` — a PLAIN tool agent (no `response_format`, so no forced tool_choice) on the thinking model, key-rotating + failover like the normal one. Returns None if the provider has no thinking spec.
-      - `analyste.run_diagnostic(question, deep)` (NEW shared core — `ask()` AND orchestrator's `run_analyste` now both call it, removing the duplicated invoke logic): `thinking = deep and llm.thinking_available(PROVIDER)`. Thinking path: run the thinking agent with `SYSTEM_PROMPT+DEEP_SUFFIX+_JSON_SUFFIX` (emit the report as JSON), then `_extract_report()` validates it against `RapportAnalyste` PROGRAMMATICALLY (strips ```json fences, outermost {...}) — **free happy path, zero extra call**; only if it fails to parse/validate does it reprompt a cheap `deepseek-chat` structured call (`build_structured`) with a **CLI + log warning**. Deep budget (30/5, recursion 80) applies only in thinking mode.
-      - **Non-DeepSeek `--deep` = no-op** (normal mode) — user's choice; thinking is DeepSeek-only for now.
-      - Verified live: `analyste.py "…" --thinking` → served by `deepseek/deepseek-v4-flash`, rich nuanced grounded report, JSON validated (no fallback), budget bounded (sample capped 6), 60/60 tool checks, mistral `--deep` degrades to normal.
-  - **DeepSeek provider + tool-call budget + recursion fixes (2026-07-03):**
-    - **DeepSeek wired** (paid, OpenAI-compatible via `ChatOpenAI` base_url `https://api.deepseek.com`; key `DEEPSEEK_API_KEY`). Uses **`deepseek-chat`** (non-thinking) — the V4 thinking models (`deepseek-v4-flash`/`-pro`) return `400 "Thinking mode does not support this tool_choice"` because our structured output forces a tool call (tested ToolStrategy / chat_template_kwargs / reasoning_effort — none bypass it). 1M context = no TPM wall; ~1¢/run. Scored 88/80 in `models.py`; `/models` availability fetch adds the `deepseek-chat` alias (endpoint lists only v4-*). **OFF by default** — only used when `LLM_PROVIDER=deepseek` (or as fallback). `deepseek-chat` retires 2026-07-24 → revisit then.
-    - **`llama-4-scout` REMOVED from groq/big** — same `400 "json mode cannot be combined with tool/function calling"` as gpt-oss. groq/big is now just `[llama-3.3-70b, qwen3-32b]`.
-    - **GraphRecursionError cascade fixed** — `build_agent` fallbacks now use `exceptions_to_handle=_failover_excs()` (quota/400/auth/5xx from the installed provider SDKs, EXCLUDING GraphRecursionError), so an agent loop propagates immediately instead of re-running across every key/model and burning quota.
-    - **Recursion limit raised** 25→**50** (`LLM_RECURSION_LIMIT`), passed in the invoke config of `ask`/`run_analyste`.
-    - **Deterministic tool-call BUDGET** (`analyste._budgeted` wraps every tool; `reset_tool_budget()` per run): per-tool cap `LLM_TOOL_BUDGET_PER=3`, total `LLM_TOOL_BUDGET_TOTAL=16`. Past budget a tool returns a STOP signal (`budget_exhausted`) instead of data → forces the model to write. Root cause it fixes: `deepseek-chat` on "analyse complète" over-explored (each axis tool once = good, then **9 `actor` + ~20 `sample`** = 41 calls → blew even the 50 recursion limit). After the guard: **15 calls, clean grounded report**, and the model even disclosed the truncation in `limites`. Prompt also nudged ("chaque outil d'axe une fois; après 2–3 sample, RÉDIGE"). 60/60 tool checks intact.
-  - **Scored model registry `agent/models.py` (2026-07-03):** each (provider, tier) has SCORED candidate models; `resolve()` returns them best-first, filtered to what the key can actually see via a LIVE model list (groq SDK `.models.list()` / mistral REST), cached 24 h to `out/model_cache.json`; an env-preferred `LLM_<PROVIDER>_<TIER>` is tried first. `_leaf_models` builds the fallback chain best-model→next→next-key→next-provider, so the rotation mixin auto-picks the strongest AVAILABLE model and degrades gracefully. score = fitness FOR THE TIER (big favours reasoning/tools, small favours cheap+fast). gpt-oss excluded (json+tools). Current picks logged each run (`models[provider/tier] → […]`): mistral big `[large, medium, magistral-medium]`, groq big `[qwen3-32b, llama-3.3-70b, llama-4-scout]`, etc. Tune scores in `_CANDIDATES`. This SUPERSEDES the static `_PROVIDER_MODELS` map below.
-  - **Per-provider model TIERS (replaced the buggy `LLM_ANALYSTE_MODEL`):** `LLM_ANALYSTE_MODEL` was provider-agnostic → with `LLM_PROVIDER=groq` it asked Groq for `mistral-large-latest` → **404** (then fallback). Fixed with `analyste._PROVIDER_MODELS = {provider: {small, big}}` (verified against each provider's LIVE model list, fetched via the groq/mistral SDKs+REST 2026-07-03). A STAGE requests a TIER — Analyste=`big`, Stratège/Rédacteur/critique=`small` — and `_model_for(provider,tier)` resolves it to THAT provider's own model, so `_leaf_models` gives e.g. big → `mistral/mistral-large` then `groq/llama-3.3-70b` (fallback uses ITS model, never a cross-provider name). Per-cell env override `LLM_<PROVIDER>_<TIER>` (e.g. `LLM_GROQ_BIG`). `build_agent(tier="big")`, `build_structured(tier="small")`, `build_model(tier=…)`. Tiers: groq {small llama-3.1-8b-instant, big llama-3.3-70b-versatile}, mistral {small mistral-small-latest, big mistral-large-latest}, gemini {small 2.5-flash-lite, big 2.5-flash}. gpt-oss excluded (json+tools incompatible).
-  - **Model findings — CORRECTED 2026-07-03 (earlier version overstated this).** The Groq failures are QUOTA/rate-limits, not a hard "Groq can't do it", and NOT a multi-key bug (the multi-key env works and is the mitigation). Measured Groq FREE-tier limits (via `x-ratelimit-*` headers + 429/413 bodies):
-    - **TPM (tokens/minute), per model:** `llama-3.3-70b` = **12 000**, `qwen/qwen3-32b` = **6 000**. The tool-heavy Analyste request (system prompt + 12 tool schemas + growing tool blobs) reaches ~14–16k tokens, so it 413s ("request too large / reduce message size") once a request exceeds that model's TPM — a HARD per-minute ceiling no number of keys fixes. llama (12k) survives more turns than qwen (6k, which 413s after ~1 tool call).
-    - **TPD (tokens/day), per model per key:** `llama-3.3-70b` = **100 000** (~a dozen Analyste runs). Burned keys #0/#1 to ~96k testing on 2026-07-03 → 429 TPD (resets in ~1–2h). 3 keys = 3× TPD headroom.
-    - So: Groq **runs the Analyste fine while a request stays under the model's TPM and the day's TPD isn't spent** (short/early runs). It reliably serves the small Stratège/Rédacteur calls. `openai/gpt-oss-120b` is separately unusable → **400 "json mode cannot be combined with tool calling"**. Net for the big tool-heavy Analyste on FREE tier: no Groq model sustains the full multi-turn context → cascades to `mistral-large`; a paid Dev tier (higher TPM) removes this.
-    - **Z.ai (GLM) tried 2026-07-03:** key works but only the free `glm-4.5-flash` is available (GLM-4.6/4.5/Air → "insufficient balance"); flash is a reasoning model (needs `extra_body={"thinking":{"type":"disabled"}}` or content is empty), tool-calling works in isolation but through `create_agent` it was flaky (empty structured output, intermittent 500). Installed `langchain-openai` (harmless; enables OpenAI-compatible providers). NOT wired into the pipeline — revisit with GLM-4.6 once the Z.ai account has balance (GLM tops BFCL 76.7%, the tool-calling benchmark).
-  - **Final config (`.env`):** `LLM_PROVIDER=mistral` + `LLM_FALLBACK_PROVIDER=groq` (no per-model line needed — tiers handle it). Analyste=mistral-large (big context, no 413), cheap=mistral-small, Groq=fallback+quota (its own llama models). Set `LLM_PROVIDER=groq` if preferred — the tier map makes it 404-safe, but the Analyste will 413 on Groq and fall back to Mistral (slower). Verified live: `SERVED BY: mistral-large ×2, mistral-small ×3`, **0 404s**, 60/60 tool checks. Bigger Groq later: paid tier, or refactor to decouple tool-calling from the final structured (json) call (unblocks gpt-oss-120b).
-- ⏭ **Phase 3c ideas** — run the pipeline for real (needs quota: Groq key or wait for Gemini daily reset); feed orchestrator output into a Day-2 deck; add a guardrail that Rédacteur text contains no @handle/number absent from the diagnostic. Minor: some nearest-centroid narrative samples are low-signal ("Cheh pour Ultia") — prompt tells agent to fall back to `sample(contains=…, sort=reach)`.
+## Toolchain gotchas
+- **Python:** system pip is PEP-668 locked → always use `.venv/bin/python`. Pkgs: pandas 3,
+  scikit-learn, langchain 1.3.11 + langgraph, langchain-{google-genai,groq,mistralai,openai},
+  networkx, python-pptx, pyyaml, python-dotenv.
+- **Node:** v22, `pptxgenjs` local. pptxgenjs: no `#`/8-char hex, fresh shadow per call,
+  `bullet:true`.
+- **QA:** `soffice --headless --convert-to pdf x.pptx` then `pdftoppm -jpeg -r 120 x.pdf s`.
+- pandas 3.0 datetimes are µs → unix seconds via `.values.astype("datetime64[s]").astype("int64")`.
+
+## Deck → Canva  → memory [[canva-import-route]]
+Manual PPTX import errors on this account. Route: user uploads via litterbox
+(`! curl -F ... https://litterbox.catbox.moe/.../api.php`) → plugin
+`import-design-from-url` → fully editable native import. Avoid `generate-design` (drops
+real figures). Latest master deck design: id `DAHOUyzCplc`
+(edit https://www.canva.com/d/avHPYQwGPNNA3iu ).
