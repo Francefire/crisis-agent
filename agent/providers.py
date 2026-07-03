@@ -152,6 +152,17 @@ PROVIDERS: dict = {
             "big": [("deepseek-chat", 88)],
             "small": [("deepseek-chat", 80)],
         },
+        # THINKING capability (opt-in via --deep/--thinking). A thinking-capable
+        # model + the kwargs that enable reasoning. Thinking mode supports AUTO
+        # tool-calls but NOT forced tool_choice, so the caller runs a plain tool
+        # agent (no structured response_format) and formats the result separately.
+        # Verified vs api-docs.deepseek.com/guides/thinking_mode (2026-07-03).
+        # Any provider WITHOUT this key → thinking arg is a no-op (degrades).
+        "thinking": {
+            "model": "deepseek-v4-flash",
+            "kwargs": {"extra_body": {"thinking": {"type": "enabled"}},
+                       "reasoning_effort": "high"},   # temperature is ignored in thinking mode
+        },
     },
 }
 
@@ -168,6 +179,12 @@ def spec(provider: str) -> dict:
 def candidates(provider: str, tier: str) -> list:
     """[(model_id, score)] for (provider, tier); [] if none declared."""
     return PROVIDERS.get(provider, {}).get("candidates", {}).get(tier, [])
+
+
+def thinking_spec(provider: str) -> dict | None:
+    """The provider's THINKING descriptor ({model, kwargs}), or None if it declares
+    no reasoning mode → callers treat thinking as unavailable (a no-op)."""
+    return PROVIDERS.get(provider, {}).get("thinking")
 
 
 # ------------------------------------------------------------------------- keys

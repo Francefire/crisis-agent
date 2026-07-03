@@ -17,6 +17,7 @@ Run:
 from __future__ import annotations
 
 import os
+import re
 import sys
 import json
 
@@ -268,6 +269,25 @@ _STOP_MSG = {"budget_exhausted": True,
                          "données déjà collectées.")}
 
 
+_BASE_BUDGET_TOTAL, _BASE_BUDGET_PER = TOOL_BUDGET_TOTAL, TOOL_BUDGET_PER
+
+# --deep / --thinking (see __main__): a launch arg that widens EXPLORATION so the
+# agent selects & chains more tools — all 5 axes + cross-checks (breakdown/actor/
+# engagement_quality/reply_network) — and reasons harder before writing. Reliable
+# on every provider (no model-level "thinking mode", which conflicts with our forced
+# tool_choice on some providers — see PROJECT_NOTES). All env-overridable.
+DEEP_BUDGET_TOTAL = int(os.environ.get("LLM_DEEP_BUDGET_TOTAL", "30"))
+DEEP_BUDGET_PER = int(os.environ.get("LLM_DEEP_BUDGET_PER", "5"))
+DEEP_RECURSION = int(os.environ.get("LLM_DEEP_RECURSION", "80"))
+
+
+def set_budget(total: int, per: int) -> None:
+    """Adjust the per-run tool-call budget (the `_budgeted` wrapper reads these
+    module globals at call time, so reassigning them takes effect immediately)."""
+    global TOOL_BUDGET_TOTAL, TOOL_BUDGET_PER
+    TOOL_BUDGET_TOTAL, TOOL_BUDGET_PER = total, per
+
+
 def reset_tool_budget() -> None:
     """Call at the start of each Analyste run so the budget is per-run."""
     _TOOL_CALLS.clear()
@@ -412,34 +432,123 @@ Réponds en français."""
 # fast instead of burning tokens. Env-overridable.
 ANALYSTE_RECURSION_LIMIT = int(os.environ.get("LLM_RECURSION_LIMIT", "50"))
 
+# Appended to the system prompt in --deep / --thinking mode: makes the agent reason
+# harder about WHICH tools to select and cover the full grid + cross-checks before
+# writing (paired with the wider deep budget above).
+DEEP_SUFFIX = """
+
+MODE APPROFONDI : avant d'agir, RAISONNE explicitement sur les axes et outils \
+pertinents pour la question, puis exécute un diagnostic LARGE : couvre les CINQ axes \
+(ACTEURS, NARRATIFS, PROPAGATION, COORDINATION, SÉMANTIQUE) et RECOUPE au moins deux \
+affirmations clés avec les outils de croisement (`breakdown`, `actor`, \
+`engagement_quality`, `reply_network`) — quand deux signaux indépendants concordent (ou \
+divergent), dis-le. Explore plus largement qu'en mode normal, mais reste factuel et \
+sourcé, et termine par un rapport complet (n'explore pas à l'infini)."""
+
 
 def build_agent(tier: str = "big"):
-    """The tool-using Analyste agent: the LLM engine's generic `build_agent` bound
-    to THIS domain's tools, system prompt and output schema. It fails over across
-    every configured (provider, model, key) — see llm.build_agent for the policy.
-    Defaults to the "big" tier (the Analyste is the tool-using reasoning stage)."""
+    """The standard tool-using Analyste agent: the LLM engine's generic `build_agent`
+    bound to THIS domain's tools, system prompt and output schema. Fails over across
+    every configured (provider, model, key) — see llm.build_agent."""
     return llm.build_agent(TOOLS, SYSTEM_PROMPT, RapportAnalyste, tier=tier)
 
 
-def ask(question: str, tier: str = "big") -> dict:
+def apply_depth(thinking: bool) -> int:
+    """Reset + set the per-run tool budget and return the recursion limit. Widened
+    only when actually in thinking mode (deep on a thinking-capable provider)."""
     reset_tool_budget()
-    agent = build_agent(tier)
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": question}]},
-        config={"callbacks": [ToolLogger()],
-                "recursion_limit": ANALYSTE_RECURSION_LIMIT})
-    report = result.get("structured_response")
-    tool_calls = [m for m in result["messages"] if getattr(m, "type", "") == "tool"]
+    if thinking:
+        set_budget(DEEP_BUDGET_TOTAL, DEEP_BUDGET_PER)
+        return DEEP_RECURSION
+    set_budget(_BASE_BUDGET_TOTAL, _BASE_BUDGET_PER)
+    return ANALYSTE_RECURSION_LIMIT
+
+
+# ---- thinking-mode structured output ----------------------------------------
+# Thinking mode can't force tool_choice, so the thinking agent emits the report as
+# JSON in its final message; we validate it against the schema (free), and only if
+# that fails do we reprompt a cheap deepseek-chat structured call (warned in CLI+log).
+_JSON_SUFFIX = """
+
+SORTIE FINALE : quand ton analyse est terminée, réponds UNIQUEMENT par un objet JSON \
+valide (aucun texte avant/après, pas de balises markdown), avec EXACTEMENT ces clés — \
+"synthese" (str), "faits_cles" (list[str]), "narratifs" (list d'objets \
+{"nom","resume","volume_pct" (nombre ou null),"exemple"}), "dynamique" (str), \
+"coordination" (str ou null), "sentiment" (str ou null), "limites" (str)."""
+
+_FORMAT_PROMPT = """Restructure l'ANALYSE suivante dans le schéma imposé, SANS rien \
+inventer : n'emploie que les faits, chiffres et @comptes présents dans l'analyse.
+
+ANALYSE :
+{analysis}"""
+
+
+def _extract_report(text: str) -> RapportAnalyste | None:
+    """Parse the thinking model's final JSON message into RapportAnalyste, or None
+    (strips ```json fences, then takes the outermost {...}). Programmatic check."""
+    m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+    raw = m.group(1) if m else text
+    lo, hi = raw.find("{"), raw.rfind("}")
+    if lo < 0 or hi < 0:
+        return None
+    try:
+        return RapportAnalyste(**json.loads(raw[lo:hi + 1]))
+    except Exception:
+        return None
+
+
+def run_diagnostic(question: str, deep: bool = False) -> tuple[RapportAnalyste, list[str]]:
+    """Core Analyste run → (report, tool_outputs). Shared by `ask` and the pipeline.
+
+    deep on a THINKING-capable provider (DeepSeek) → a thinking tool-agent that reasons
+    harder and selects more tools; its JSON output is validated programmatically, with a
+    deepseek-chat structured reprompt as fallback. deep elsewhere → no-op (normal mode)."""
+    thinking = deep and llm.thinking_available(PROVIDER)
+    recursion = apply_depth(thinking)
+    cfg = {"callbacks": [ToolLogger()], "recursion_limit": recursion}
+
+    if thinking:
+        agent = llm.build_thinking_agent(TOOLS, SYSTEM_PROMPT + DEEP_SUFFIX + _JSON_SUFFIX)
+        result = agent.invoke({"messages": [{"role": "user", "content": question}]}, config=cfg)
+        tool_outputs = [str(m.content) for m in result["messages"]
+                        if getattr(m, "type", "") == "tool"]
+        final = str(result["messages"][-1].content)
+        report = _extract_report(final)
+        if report is None:                              # JSON malformed → reprompt + warn
+            _LOG.warning("thinking: JSON final invalide → reformatage via structured deepseek-chat")
+            print("      ⚠ sortie JSON du modèle thinking invalide — reformatage (deepseek-chat).",
+                  flush=True)
+            report = build_structured(RapportAnalyste, tier="big").invoke(
+                _FORMAT_PROMPT.format(analysis=final))
+        return report, tool_outputs
+
+    agent = build_agent("big")
+    result = agent.invoke({"messages": [{"role": "user", "content": question}]}, config=cfg)
+    tool_outputs = [str(m.content) for m in result["messages"]
+                    if getattr(m, "type", "") == "tool"]
+    return result.get("structured_response"), tool_outputs
+
+
+def ask(question: str, tier: str = "big", deep: bool = False) -> dict:
+    report, tool_outputs = run_diagnostic(question, deep=deep)
     return {
         "report": report.model_dump() if report else None,
-        "n_tool_calls": len(tool_calls),
+        "n_tool_calls": len(tool_outputs),
     }
 
 
 if __name__ == "__main__":
-    q = " ".join(sys.argv[1:]) or \
+    import argparse
+    p = argparse.ArgumentParser(description="Analyste — diagnostic de crise tool-grounded")
+    p.add_argument("question", nargs="*", help="la question d'analyse")
+    p.add_argument("--deep", "--thinking", action="store_true", dest="deep",
+                   help="mode approfondi : raisonnement élargi + budget d'outils accru "
+                        f"({DEEP_BUDGET_TOTAL} appels/{DEEP_BUDGET_PER} par outil vs "
+                        f"{_BASE_BUDGET_TOTAL}/{_BASE_BUDGET_PER}) pour couvrir tous les axes")
+    args = p.parse_args()
+    q = " ".join(args.question) or \
         "Quels sont les principaux narratifs de la crise et comment se sont-ils propagés ?"
-    print(f">>> Question : {q}\n")
-    out = ask(q)
+    print(f">>> Question : {q}{'  [MODE APPROFONDI]' if args.deep else ''}\n")
+    out = ask(q, deep=args.deep)
     print(f"[{out['n_tool_calls']} appels d'outils]\n")
     print(json.dumps(out["report"], indent=2, ensure_ascii=False))

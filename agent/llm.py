@@ -296,3 +296,39 @@ def build_agent(tools, system_prompt: str, response_format,
     if len(agents) == 1:
         return agents[0]
     return agents[0].with_fallbacks(agents[1:], exceptions_to_handle=_failover_excs())
+
+
+# --------------------------------------------------------------- thinking mode
+def thinking_available(provider: str) -> bool:
+    """True if `provider` declares a reasoning mode (providers.thinking_spec)."""
+    return providers.thinking_spec(provider) is not None
+
+
+def _thinking_chat(provider: str, key: str, tspec: dict, key_idx: int = 0):
+    """A rotating chat model on the provider's THINKING model + reasoning kwargs.
+    No temperature (thinking mode ignores it); built from the registry like `_chat`."""
+    spec = providers.spec(provider)
+    m = _rotating(spec["cls"]())(
+        model=tspec["model"], rate_limiter=_limiter(provider), max_retries=0,
+        **{spec["key_kwarg"]: key}, **spec.get("extra", {}), **tspec.get("kwargs", {}))
+    _MODEL_META[id(m)] = (provider, tspec["model"], key_idx)
+    return m
+
+
+def build_thinking_agent(tools, system_prompt: str, provider: str | None = None):
+    """A PLAIN tool agent (NO forced structured output) on the provider's thinking
+    model, failing over across its keys. Returns None if the provider declares no
+    thinking capability. Thinking mode supports auto tool-calls but not the forced
+    tool_choice structured output needs — so the caller formats the result itself."""
+    provider = provider or PROVIDER
+    tspec = providers.thinking_spec(provider)
+    if tspec is None:
+        return None
+    agents = [create_agent(_thinking_chat(provider, k, tspec, key_idx=j),
+                           tools=tools, system_prompt=system_prompt)
+              for j, k in enumerate(providers.keys(provider))]
+    if not agents:
+        return None
+    if len(agents) == 1:
+        return agents[0]
+    return agents[0].with_fallbacks(agents[1:], exceptions_to_handle=_failover_excs())
