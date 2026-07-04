@@ -51,25 +51,14 @@ def emit(md: str, path: str) -> None    # write file + print to stdout + print "
 
 ### Emitted Markdown structure (both flavours share this skeleton)
 
-```
-# <title>
+The generated `.md` contains six top-level sections, in order:
 
-## 1. Ton rôle
-<one paragraph: you are a front-end engineer; build ONE self-contained .html …>
-
-## 2. Direction artistique   (= DESIGN_SYSTEM + layout-specific notes)
-
-## 3. Les données
-```json
-{ …the payload… }
-```
-
-## 4. Ce qu'il faut construire   (section-by-section spec + chart-per-metric table)
-
-## 5. Contraintes techniques   (single file, Chart.js CDN, responsive, FR labels, honest charts)
-
-## 6. Checklist d'acceptation
-```
+1. **Ton rôle** — one paragraph: "you are a front-end engineer; build ONE self-contained `.html` …".
+2. **Direction artistique** — the `DESIGN_SYSTEM` block + layout-specific notes.
+3. **Les données** — the payload inside a fenced ```json``` block.
+4. **Ce qu'il faut construire** — section-by-section spec + the chart-per-metric table.
+5. **Contraintes techniques** — single file, Chart.js CDN, responsive, FR labels, honest charts.
+6. **Checklist d'acceptation** — the acceptance checklist.
 
 ## `DESIGN_SYSTEM` (shared)
 

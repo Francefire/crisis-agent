@@ -113,3 +113,16 @@ Manual PPTX import errors on this account. Route: user uploads via litterbox
 `import-design-from-url` → fully editable native import. Avoid `generate-design` (drops
 real figures). Latest master deck design: id `DAHOUyzCplc`
 (edit https://www.canva.com/d/avHPYQwGPNNA3iu ).
+
+## HTML-visualizer prompt emitter (`--emit-viz`, 2026-07-03)
+`agent/viz_prompt.py` (pure, stdlib-only, no LLM): `build_analyste_md(report, tool_outputs)` →
+a **data dashboard** prompt, `build_report_md(pipeline_result, tool_outputs)` → a
+**report/action-plan** prompt; `emit()` writes the `.md` AND prints it. Wired as `--emit-viz`:
+`analyste.py "<q>" --emit-viz` → `out/viz_analyste.md`; `orchestrateur.py "<q>" [--cache]
+--emit-viz` → **both** `out/viz_analyste.md` + `out/viz_report.md` (with `--cache` = zero API
+calls). Each `.md` = role brief + dark "investigation" design direction + the run's real data as
+fenced JSON (the dashboard embeds `tool_outputs`, where the numbers live) + a section-by-section
+build spec + Chart.js (CDN, `chartjs-plugin-annotation` optional) feature reminders + acceptance
+checklist. Workflow: run with the flag → paste the `.md` into another AI → get a single-file HTML
+you open locally. `ask()` now also returns `tool_outputs`. Doesn't touch `tools.py`;
+`verify_tools.py` stays 60/60.
