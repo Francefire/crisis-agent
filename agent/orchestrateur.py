@@ -318,13 +318,22 @@ def _print_report(out: dict) -> None:
 if __name__ == "__main__":
     # optional flags: --cache reuses the last saved diagnostic (skips the Analyste);
     # --deep / --thinking widens the Analyste's tool selection + reasoning.
-    flags = {"--cache", "--deep", "--thinking"}
+    flags = {"--cache", "--deep", "--thinking", "--emit-viz"}
     args = [a for a in sys.argv[1:] if a not in flags]
     use_cache = "--cache" in sys.argv[1:]
     deep = "--deep" in sys.argv[1:] or "--thinking" in sys.argv[1:]
+    emit_viz = "--emit-viz" in sys.argv[1:]
     q = " ".join(args) or \
         "Comment le CNC doit-il réagir à cette crise virale ? Analyse la propagation, les narratifs et la coordination."
     out = run_pipeline(q, use_cache=use_cache, deep=deep)
     with open(os.path.join(OUT_DIR, "pipeline_result.json"), "w") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
     _print_report(out)
+    if emit_viz:
+        from viz_prompt import build_analyste_md, build_report_md, emit
+        tool_outputs = (json.load(open(TOOLOUT_CACHE))
+                        if os.path.exists(TOOLOUT_CACHE) else [])
+        emit(build_analyste_md(out["analyste"], tool_outputs),
+             os.path.join(OUT_DIR, "viz_analyste.md"))
+        emit(build_report_md(out, tool_outputs),
+             os.path.join(OUT_DIR, "viz_report.md"))

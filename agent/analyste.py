@@ -534,6 +534,7 @@ def ask(question: str, tier: str = "big", deep: bool = False) -> dict:
     return {
         "report": report.model_dump() if report else None,
         "n_tool_calls": len(tool_outputs),
+        "tool_outputs": tool_outputs,
     }
 
 
@@ -545,6 +546,9 @@ if __name__ == "__main__":
                    help="mode approfondi : raisonnement élargi + budget d'outils accru "
                         f"({DEEP_BUDGET_TOTAL} appels/{DEEP_BUDGET_PER} par outil vs "
                         f"{_BASE_BUDGET_TOTAL}/{_BASE_BUDGET_PER}) pour couvrir tous les axes")
+    p.add_argument("--emit-viz", action="store_true", dest="emit_viz",
+                   help="écrit + affiche out/viz_analyste.md : un prompt prêt à coller "
+                        "pour qu'une IA construise un tableau de bord HTML des chiffres")
     args = p.parse_args()
     q = " ".join(args.question) or \
         "Quels sont les principaux narratifs de la crise et comment se sont-ils propagés ?"
@@ -552,3 +556,7 @@ if __name__ == "__main__":
     out = ask(q, deep=args.deep)
     print(f"[{out['n_tool_calls']} appels d'outils]\n")
     print(json.dumps(out["report"], indent=2, ensure_ascii=False))
+    if args.emit_viz:
+        from viz_prompt import build_analyste_md, emit
+        emit(build_analyste_md(out["report"], out["tool_outputs"]),
+             os.path.join(HERE, "out", "viz_analyste.md"))
