@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ultia × CNC — Note de réponse &amp; plan d'action</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{
+    --ink:#0B1020; --panel:#1B2340; --violet:#7C3AED; --cyan:#22D3EE;
+    --coral:#FF5C5C; --light:#E5E7EB; --muted:#94A3B8; --line:#2a3358; --grey:#5b6688;
+    --green:#34D399;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1000px 560px at 15% -12%, #16204a 0%, var(--ink) 60%) fixed;
+    color:var(--light);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.62;padding:0 clamp(16px,4vw,40px) 48px;
+  }
+  h1,h2,h3,.serif{font-family:Georgia,"Times New Roman",serif}
+  .doc{max-width:940px;margin:0 auto}
+  .topbar{height:4px;border-radius:0 0 4px 4px;max-width:940px;margin:0 auto 30px;
+    background:linear-gradient(90deg,var(--violet),var(--cyan) 55%,var(--coral))}
+
+  /* hero */
+  .kicker{color:var(--cyan);letter-spacing:.2em;text-transform:uppercase;font-size:12px;font-weight:600}
+  h1{font-size:clamp(27px,3.8vw,40px);line-height:1.12;margin:.2em 0 .35em}
+  .q{color:var(--muted);font-style:italic;border-left:3px solid var(--violet);padding:2px 0 2px 14px;margin:0 0 18px;max-width:72ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;
+    padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:#121a30}
+  .badge.ok{color:var(--green);border-color:#1f5e49}
+  .badge.ok::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .badge.soft{color:var(--muted)}
+
+  /* section scaffold */
+  section{margin:34px 0}
+  .sec-h{display:flex;align-items:center;gap:12px;margin:0 0 4px}
+  .sec-h .num{font-family:Georgia,serif;color:var(--violet);font-size:15px;font-weight:700;
+    border:1px solid var(--line);border-radius:8px;width:30px;height:30px;display:grid;place-items:center;flex:none}
+  h2{font-size:21px;margin:0}
+  .sec-sub{color:var(--muted);font-size:13px;margin:2px 0 16px 42px}
+
+  .card{background:linear-gradient(180deg,var(--panel),#151b32);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .cols{display:grid;gap:16px}
+  .c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.c2,.c3{grid-template-columns:1fr}}
+
+  .lead{font-size:15.5px}
+  .facts{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px}
+  @media(max-width:760px){.facts{grid-template-columns:1fr}}
+  .facts li{position:relative;padding-left:20px;font-size:13.5px;color:#cdd5e6}
+  .facts li::before{content:"▹";position:absolute;left:0;color:var(--cyan)}
+  .facts b{color:var(--light)}
+
+  /* phase ribbon */
+  .phases{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:6px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  @media(max-width:760px){.phases{grid-template-columns:1fr}}
+  .phase{padding:14px 16px;background:#141b31;border-right:1px solid var(--line)}
+  .phase:last-child{border-right:0}
+  .phase .ph{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .phase h3{font-size:15px;margin:3px 0 5px}
+  .phase p{font-size:12.5px;color:#c2cbe0;margin:0}
+  .phase.p1{box-shadow:inset 0 3px 0 var(--violet)}
+  .phase.p2{box-shadow:inset 0 3px 0 var(--coral)}
+  .phase.p3{box-shadow:inset 0 3px 0 var(--cyan)}
+
+  .grid5 h3{font-size:15px;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .grid5 h3 .tag{font-size:11px;font-weight:600;color:var(--ink);background:var(--cyan);border-radius:6px;padding:1px 7px}
+  .grid5 p{font-size:13px;color:#c2cbe0;margin:0}
+  .chartmini{position:relative;height:150px;margin-top:8px}
+
+  /* plan */
+  .pill{display:inline-block;background:rgba(124,58,237,.18);border:1px solid #4c3a86;color:#c8b6ff;
+    font-weight:600;font-size:13px;padding:5px 13px;border-radius:999px}
+  .axes{display:grid;gap:12px;margin-top:14px}
+  .axe{background:#141b31;border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:10px;padding:14px 16px}
+  .axe .a-h{font-weight:600;font-size:14.5px;margin-bottom:5px;color:var(--light)}
+  .axe .a-h .k{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin-right:8px}
+  .axe .just{font-size:12.5px;color:var(--muted)}
+  .axe .just::before{content:"↳ justifié par : ";color:#6b76a0}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:760px){.twocol{grid-template-columns:1fr}}
+  .mini-h{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 8px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:#121a30;border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:13px}
+  .chip.warn{border-color:#5e2b2b;color:#ffb4b4}
+  ul.tight{margin:0;padding-left:18px}ul.tight li{font-size:13.5px;margin:4px 0}
+
+  /* livrables */
+  .liv{background:#141b31;border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative}
+  .liv h3{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin:0 0 10px}
+  .copybtn{position:absolute;top:13px;right:13px;background:#1c2645;border:1px solid var(--line);color:var(--muted);
+    font-size:11.5px;font-weight:600;border-radius:7px;padding:4px 10px;cursor:pointer;transition:.15s}
+  .copybtn:hover{color:var(--light);border-color:#3a4680}
+  .copybtn.done{color:var(--green);border-color:#1f5e49}
+  .communique{font-size:14.5px;line-height:1.6}
+  .thread{counter-reset:t;display:grid;gap:8px}
+  .thread .t{position:relative;padding-left:34px;font-size:13.5px}
+  .thread .t::before{counter-increment:t;content:counter(t);position:absolute;left:0;top:-1px;
+    width:22px;height:22px;border-radius:50%;background:#1c2645;border:1px solid var(--line);
+    color:var(--cyan);font-size:12px;font-weight:700;display:grid;place-items:center}
+  .faq dt{font-weight:600;font-size:13.8px;margin-top:10px;color:var(--light)}
+  .faq dt::before{content:"Q. ";color:var(--cyan)}
+  .faq dd{margin:3px 0 0;font-size:13px;color:#c2cbe0}
+  .faq dd::before{content:"R. ";color:var(--muted)}
+
+  footer{margin-top:34px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12.5px}
+  footer h4{font-family:Georgia,serif;color:var(--light);font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.08em}
+  footer ol{margin:0;padding-left:18px}footer li{margin:4px 0}
+  .served{margin-top:14px;font-size:11.5px}
+  code{background:#121a30;padding:1px 6px;border-radius:6px;color:var(--cyan);font-size:.9em}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="doc">
+
+  <!-- 1. HERO -->
+  <div class="kicker">CNC · Note de réponse de crise · corpus X (35 396 messages)</div>
+  <h1>Une bascule en 24 h : du ciblage d'Ultia à l'attaque sur l'argent public</h1>
+  <p class="q">« Comment la crise a-t-elle évolué dans le temps — du ciblage d'Ultia vers l'attaque sur l'argent public du CNC — à quelle vitesse et quels comptes ont mené l'amplification ? Quelle réponse le CNC doit-il adopter ? »</p>
+  <div class="meta">
+    <span class="badge ok">Audit d'ancrage : valide</span>
+    <span class="badge soft">Client : le CNC</span>
+    <span class="badge soft">Pipeline : Analyste → Relecteur → Stratège → Rédacteur</span>
+  </div>
+
+  <!-- 2. DIAGNOSTIC -->
+  <section>
+    <div class="sec-h"><span class="num">1</span><h2>Diagnostic</h2></div>
+    <div class="sec-sub">Synthèse tool-grounded de l'Analyste — chiffres tracés aux sorties d'outils.</div>
+    <div class="card">
+      <p class="lead">La crise débute le 26 mars avec la vidéo de <b>@TwitchGauchiste</b> (streameuse Ultia, jurée du CNC Talent, déclarant vouloir exclure les projets « d'extrême droite »). En <b>7 h</b> le volume explose (+28,5 %/h, doublement 2,8 h) jusqu'à <b>751 msg/h</b> à 16h. Le cadrage glisse aussitôt du ciblage d'Ultia vers une attaque généralisée sur le <b>financement public</b> du CNC (46,8 % du volume, pic le 27 mars). Amplification massive — <b>85,8 % de retweets</b> — avec des signaux de coordination : synchronie <b>×3,7</b> le hasard, 14,7 % de comptes à faible empreinte.</p>
+      <ul class="facts">
+        <li><b>35 396</b> messages / 10 437 comptes · <b>85,8 %</b> de retweets</li>
+        <li>Pic <b>751 msg/h</b> le 26 mars 16h · montée en <b>7 h</b></li>
+        <li>Portée culmine <b>2 h avant</b> le volume — les sources précèdent les relais</li>
+        <li>Narratif dominant <b>46,8 %</b> (argent public), pic 27 mars</li>
+        <li>Top amplifiés : <b>@SirAfuera</b> 1 852 · <b>@LeDindonFiscal</b> 1 544 · @ojim_france 1 254</li>
+        <li>Vrai copier-coller <b>0,6 %</b> — le reste est du retweet</li>
+        <li>Synchronie <b>30,1 %</b> &lt;60 s (×3,7 vs hasard)</li>
+        <li>Négatif <b>30,7 %</b> global · pic <b>63,6 %</b> le 16 avril</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3. CHRONOLOGIE / DRIFT -->
+  <section>
+    <div class="sec-h"><span class="num">2</span><h2>Chronologie de la bascule</h2></div>
+    <div class="sec-sub">Trois phases — l'axe « propagation », cœur de l'analyse.</div>
+    <div class="phases">
+      <div class="phase p1"><div class="ph">Phase 1 · 26 mars 8h–15h</div><h3>Allumage</h3><p>Vidéo @TwitchGauchiste (8h25, 1,71 M). Communiqué @LeCNC (14h08, 2,86 M). Les gros comptes s'allument : @jon_delorraine (12h03), @LeDindonFiscal, @SirAfuera.</p></div>
+      <div class="phase p2"><div class="ph">Phase 2 · 26–27 mars</div><h3>Explosion &amp; glissement</h3><p>+28,5 %/h → 751 msg/h. Dès le 27, le récit bascule d'Ultia vers l'« argent public » (46,8 %, 3 138 msg/j). Demi-vie 7 h.</p></div>
+      <div class="phase p3"><div class="ph">Phase 3 · 28 mars–1 mai</div><h3>Rémanence &amp; polarisation</h3><p>Répliques (29 mars ; 8–11 avr : suspension du fonds). Négativité au plus haut le 16 avril (63,6 %).</p></div>
+    </div>
+    <div class="cols c2" style="margin-top:16px">
+      <div class="card"><h3 style="font-size:14px;margin:0 0 2px">Volume quotidien, par tonalité</h3>
+        <div class="chartmini" style="height:190px"><canvas id="timeline"></canvas></div></div>
+      <div class="card"><h3 style="font-size:14px;margin:0 0 2px">Répartition du sentiment</h3>
+        <div class="chartmini" style="height:190px"><canvas id="sentiment"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- 4. GRILLE 5 AXES -->
+  <section>
+    <div class="sec-h"><span class="num">3</span><h2>Lecture par axe</h2></div>
+    <div class="sec-sub">Narratifs · Coordination · Sémantique.</div>
+    <div class="cols c2 grid5">
+      <div class="card">
+        <h3>Narratifs <span class="tag">TF-IDF + k-means</span></h3>
+        <p>Un macro-récit « argent public » (46,8 %) domine, greffé sur le ciblage initial d'Ultia (7,5 %) ; un contre-récit « le CNC cède à l'extrême droite » (6,7 %) émerge en avril.</p>
+        <div class="chartmini"><canvas id="narratifs"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Coordination <span class="tag" style="background:var(--violet);color:#fff">signaux</span></h3>
+        <p>Amplification synchronisée réelle (30,1 % &lt;60 s, ×3,7 le hasard) mais <b>diffuse</b> : composant géant de 2 824 comptes, pas de cellules isolées. Le « vrai » copier-coller hors RT reste à 0,6 %.</p>
+        <ul class="tight" style="margin-top:8px;color:#c2cbe0">
+          <li>Communiqué @LeCNC : 69,9 % des copies en rafale (médiane 48,5 s)</li>
+          <li>14,7 % de comptes à faible empreinte (proxy, pas « bots »)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Sémantique <span class="tag" style="background:var(--coral);color:#fff">tonalité</span></h3>
+        <p>66,3 % neutre · <b>30,7 % négatif</b> · 3 % positif. Négativité plus forte en <b>rémanence</b> (63,6 % le 16 avril) qu'à l'explosion (34,3 % le 27 mars).</p>
+      </div>
+      <div class="card">
+        <h3>Acteurs <span class="tag" style="background:var(--grey);color:#fff">amplification</span></h3>
+        <p>Les 5 comptes les plus relayés ne sont <b>jamais auteurs</b> dans le corpus — sources de cadrage diffusées par un réseau de relayeurs (@SirAfuera 1 129 relayeurs distincts).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. PLAN DE RÉPONSE -->
+  <section>
+    <div class="sec-h"><span class="num">4</span><h2>Plan de réponse</h2></div>
+    <div class="sec-sub">Stratège — chaque axe est justifié par un fait du diagnostic.</div>
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-bottom:4px">
+        <div><span class="mini-h" style="display:block">Posture</span><span class="pill">Transparence &amp; responsabilité</span></div>
+        <div><span class="mini-h" style="display:block">Objectifs</span>
+          <span class="chip">Rétablir la vérité sur les déclarations d'Ultia</span>
+          <span class="chip">Désescalader la crise</span></div>
+      </div>
+      <div class="mini-h" style="margin-top:16px">Audiences prioritaires</div>
+      <div class="chips"><span class="chip">Internautes ayant partagé la vidéo d'Ultia</span><span class="chip">Fans de la streameuse</span></div>
+
+      <div class="axes">
+        <div class="axe"><div class="a-h"><span class="k">Transparence</span>Publier un communiqué clarifiant les déclarations d'Ultia</div><div class="just">le communiqué permet de rétablir les faits et de couper court à la rumeur d'exclusion</div></div>
+        <div class="axe"><div class="a-h"><span class="k">Dialogue</span>Engager la conversation avec les internautes sur leurs préoccupations</div><div class="just">10,2 % de réponses, très négatives envers @LeCNC (53,3 %) et @TwitchGauchiste (60,6 %)</div></div>
+        <div class="axe"><div class="a-h"><span class="k">Réponse aux critiques</span>Répondre sur les subventions du CNC</div><div class="just">le narratif « argent public » représente 46,8 % du volume — c'est l'attaque centrale</div></div>
+        <div class="axe"><div class="a-h"><span class="k">Transparence</span>Documenter les projets soutenus par le CNC</div><div class="just">le cadrage « copinage / favoritisme » (9,5 %) cible l'opacité présumée</div></div>
+      </div>
+
+      <div class="twocol">
+        <div><div class="mini-h">Risques</div><div class="chips"><span class="chip warn">Nourrir la polémique</span><span class="chip warn">Ne pas répondre aux critiques</span></div></div>
+        <div><div class="mini-h">KPIs</div><ul class="tight"><li>Réduction du volume de messages négatifs</li><li>Hausse de la confiance dans le CNC</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. LIVRABLES -->
+  <section>
+    <div class="sec-h"><span class="num">5</span><h2>Livrables prêts à l'emploi</h2></div>
+    <div class="sec-sub">Rédacteur — contenus contenus dans le périmètre du diagnostic (aucun @compte / chiffre nouveau).</div>
+    <div class="cols c2">
+      <div class="liv">
+        <button class="copybtn" data-copy="communique">Copier</button>
+        <h3>Communiqué</h3>
+        <p class="communique" id="communique">Le CNC prend acte des déclarations d'Ultia et assure que les subventions sont attribuées de manière transparente et équitable. Nous sommes prêts à fournir des informations sur les projets soutenus par le CNC et à engager une conversation avec les internautes pour comprendre leurs préoccupations.</p>
+      </div>
+      <div class="liv">
+        <button class="copybtn" data-copy="thread">Copier</button>
+        <h3>Fil social</h3>
+        <div class="thread" id="thread">
+          <div class="t">Le CNC est transparent et responsable dans l'attribution des subventions.</div>
+          <div class="t">Nous sommes prêts à fournir des informations sur les projets soutenus par le CNC.</div>
+          <div class="t">Engageons une conversation pour comprendre vos préoccupations.</div>
+        </div>
+      </div>
+      <div class="liv">
+        <h3>FAQ</h3>
+        <dl class="faq" id="faq">
+          <dt>Pourquoi le CNC a-t-il soutenu des projets « d'extrême gauche » ?</dt>
+          <dd>Le CNC attribue les subventions de manière transparente et équitable, sans considération politique.</dd>
+          <dt>Ultia a-t-elle été exclue du CNC ?</dt>
+          <dd>Non. Elle a simplement déclaré vouloir exclure les projets d'extrême droite.</dd>
+        </dl>
+      </div>
+      <div class="liv">
+        <h3>Éléments de langage</h3>
+        <div class="chips"><span class="chip">Transparence</span><span class="chip">Responsabilité</span><span class="chip">Dialogue</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <h4>Limites du diagnostic</h4>
+    <ol>
+      <li>Aucune date de création de compte : les « comptes à faible empreinte » sont un proxy, pas une mesure de bots.</li>
+      <li>Le cluster dominant (46,8 %) agrège plusieurs sous-cadrages qu'un k plus élevé subdiviserait.</li>
+      <li>Sentiment pré-calculé automatiquement — l'ironie/sarcasme peut échapper.</li>
+      <li>Les comptes les plus amplifiés n'apparaissent pas comme auteurs (tweets d'origine hors corpus).</li>
+    </ol>
+    <div class="served">Relecteur : verdict <b style="color:var(--green)">valide</b> · critique LLM (avis) : révision suggérée (non bloquant). Servi par <code>deepseek-chat ×8</code>, <code>groq/llama-3.1-8b ×3</code>. Échantillon HTML de démonstration.</div>
+  </footer>
+</div>
+
+<script>
+const C={panel:'#1B2340',violet:'#7C3AED',cyan:'#22D3EE',coral:'#FF5C5C',light:'#E5E7EB',muted:'#94A3B8',line:'#2a3358',grey:'#5b6688'};
+Chart.defaults.color=C.muted;Chart.defaults.borderColor=C.line;
+Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+const fr=n=>Number(n).toLocaleString('fr-FR');const pct=n=>String(n).replace('.',',')+' %';
+
+const daily=[["03-19",2,0,0],["03-20",90,3,1],["03-21",34,2,1],["03-22",3,2,1],["03-23",11,2,1],["03-24",10,5,2],["03-25",11,8,0],["03-26",4674,1904,197],["03-27",4731,2508,64],["03-28",2287,1619,82],["03-29",2763,1904,265],["03-30",1277,637,98],["03-31",1206,140,10],["04-01",965,184,9],["04-02",228,124,1],["04-03",123,46,7],["04-04",132,76,3],["04-05",121,22,2],["04-06",228,23,5],["04-07",187,19,19],["04-08",581,375,36],["04-09",457,242,104],["04-10",417,245,47],["04-11",292,120,40],["04-12",109,20,6],["04-13",69,8,2],["04-14",109,39,3],["04-15",78,78,2],["04-16",34,63,2],["04-17",98,113,1],["04-18",45,76,1],["04-19",487,28,2],["04-20",252,11,0],["04-21",51,21,4],["04-22",25,17,0],["04-23",207,21,14],["04-24",136,9,4],["04-25",113,8,2],["04-26",286,19,0],["04-27",114,36,4],["04-28",21,18,0],["04-29",43,8,0],["04-30",108,24,12],["05-01",261,34,5]];
+const L=daily.map(r=>r[0]);
+new Chart(timeline,{type:'bar',data:{labels:L,datasets:[
+  {label:'Neutre',data:daily.map(r=>r[1]),backgroundColor:C.grey,stack:'s'},
+  {label:'Négatif',data:daily.map(r=>r[2]),backgroundColor:C.coral,stack:'s'},
+  {label:'Positif',data:daily.map(r=>r[3]),backgroundColor:C.cyan,stack:'s'}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:10},padding:10}}},
+    scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:8,font:{size:10}}},
+            y:{stacked:true,grid:{color:C.line},ticks:{callback:fr,font:{size:10}}}}}});
+
+new Chart(sentiment,{type:'doughnut',data:{labels:['Neutre','Négatif','Positif'],
+  datasets:[{data:[66.3,30.7,3.0],backgroundColor:[C.grey,C.coral,C.cyan],borderColor:C.panel,borderWidth:3}]},
+  options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:11},padding:10}},
+    tooltip:{callbacks:{label:c=>c.label+' : '+pct(c.raw)}}}}});
+
+const nar=[['Argent public / détournement',46.8],['CNC Talent : copinage',9.5],['Ultia exclue (partialité)',7.5],['Le CNC cède à l’extrême droite',6.7],['Financement du cinéma',4.9]];
+new Chart(narratifs,{type:'bar',data:{labels:nar.map(r=>r[0]),datasets:[{data:nar.map(r=>r[1]),backgroundColor:C.cyan,borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,layout:{padding:{right:38}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>pct(c.raw)+' du volume'}}},
+    scales:{x:{grid:{color:C.line},ticks:{callback:v=>v+' %',font:{size:10}},suggestedMax:52},y:{grid:{display:false},ticks:{font:{size:11}}}}},
+  plugins:[{id:'nv',afterDatasetsDraw(c){const{ctx}=c;ctx.save();ctx.font='600 11px system-ui';ctx.fillStyle=C.light;ctx.textBaseline='middle';
+    c.getDatasetMeta(0).data.forEach((b,i)=>ctx.fillText(pct(c.data.datasets[0].data[i]),b.x+7,b.y));ctx.restore();}}]});
+
+// copy buttons
+document.querySelectorAll('.copybtn').forEach(btn=>btn.addEventListener('click',()=>{
+  const el=document.getElementById(btn.dataset.copy);
+  let text;
+  if(btn.dataset.copy==='thread') text=[...el.querySelectorAll('.t')].map((t,i)=>(i+1)+'. '+t.textContent.trim()).join('\n');
+  else text=el.textContent.trim();
+  navigator.clipboard.writeText(text).then(()=>{btn.textContent='Copié ✓';btn.classList.add('done');
+    setTimeout(()=>{btn.textContent='Copier';btn.classList.remove('done');},1600);}).catch(()=>{btn.textContent='Ctrl+C';});
+}));
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ultia × CNC — Tableau de bord de crise</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+<style>
+  :root{
+    --ink:#0B1020; --panel:#1B2340; --violet:#7C3AED; --cyan:#22D3EE;
+    --coral:#FF5C5C; --light:#E5E7EB; --muted:#94A3B8; --line:#2a3358; --grey:#5b6688;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1100px 620px at 12% -12%, #16204a 0%, var(--ink) 58%) fixed;
+    color:var(--light);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    padding:0 clamp(16px,4vw,56px) 40px;
+  }
+  h1,h2,.serif{font-family:Georgia,"Times New Roman",serif}
+  .wrap{max-width:1200px;margin:0 auto}
+
+  /* top accent rule */
+  .topbar{height:4px;border-radius:0 0 4px 4px;max-width:1200px;margin:0 auto 26px;
+    background:linear-gradient(90deg,var(--violet),var(--cyan) 55%,var(--coral))}
+
+  header{margin:6px auto 0}
+  .kicker{color:var(--cyan);letter-spacing:.2em;text-transform:uppercase;font-size:12px;font-weight:600}
+  h1{font-size:clamp(30px,4.4vw,48px);margin:.12em 0 .18em;line-height:1.06;letter-spacing:.2px}
+  .sub{color:var(--muted);max-width:74ch;margin:0;font-size:15.5px}
+  .sub strong{color:var(--light)}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin:26px 0 18px}
+  .kpi{position:relative;background:linear-gradient(180deg,var(--panel),#141a31);
+       border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow:hidden;
+       transition:transform .15s ease,border-color .15s ease}
+  .kpi:hover{transform:translateY(-2px);border-color:#3a4680}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--violet)}
+  .kpi.accent::before{background:var(--cyan)} .kpi.alert::before{background:var(--coral)}
+  .kpi .n{font-family:Georgia,serif;font-size:clamp(25px,3vw,34px);font-weight:700;line-height:1}
+  .kpi .n small{font-size:.5em;color:var(--muted);font-weight:400}
+  .kpi .l{color:var(--muted);font-size:12.5px;margin-top:8px}
+  .kpi.alert .n{color:var(--coral)} .kpi.accent .n{color:var(--cyan)}
+
+  /* card grid */
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+  .card{background:linear-gradient(180deg,var(--panel),#151b32);border:1px solid var(--line);
+        border-radius:16px;padding:18px 18px 16px;min-width:0;
+        transition:border-color .15s ease}
+  .card:hover{border-color:#39447a}
+  .card h2{font-size:16px;margin:0 0 3px;display:flex;align-items:center;gap:9px}
+  .card h2::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--cyan);flex:none}
+  .card h2 .muted{color:var(--muted);font-weight:400;font-size:13px}
+  .card .cap{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+  .span12{grid-column:span 12}.span8{grid-column:span 8}.span7{grid-column:span 7}
+  .span5{grid-column:span 5}.span4{grid-column:span 4}
+  @media(max-width:880px){[class*=span]{grid-column:span 12}}
+  .chartwrap{position:relative;height:300px}
+  .chartwrap.tall{height:344px}
+
+  /* section label */
+  .seclabel{grid-column:span 12;display:flex;align-items:center;gap:14px;margin:8px 2px -2px;
+    color:var(--muted);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+  .seclabel::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* velocity stat row */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:12px}
+  .stat{background:#121a30;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .stat .v{font-family:Georgia,serif;font-size:25px;font-weight:700;color:var(--cyan)}
+  .stat .v.warn{color:var(--coral)}
+  .stat .k{color:var(--muted);font-size:11.5px;margin-top:5px;line-height:1.35}
+
+  /* synchrony */
+  .coordgrid{display:grid;grid-template-columns:1.15fr 1fr;gap:26px;align-items:center}
+  @media(max-width:880px){.coordgrid{grid-template-columns:1fr}}
+  .barrow{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:5px}
+  .barrow b{color:var(--light)}
+  .bar{height:16px;border-radius:9px;background:#121a30;border:1px solid var(--line);overflow:hidden;margin-bottom:14px}
+  .bar>span{display:block;height:100%;border-radius:9px}
+  .legend-inline{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin-top:2px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+  footer{margin:28px auto 0;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+  code{background:#121a30;padding:1px 6px;border-radius:6px;color:var(--cyan);font-size:.9em}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="wrap">
+<header>
+  <div class="kicker">Ultia × CNC · 19 mars – 1er mai 2026 · corpus X</div>
+  <h1>Anatomie d'une déflagration virale</h1>
+  <p class="sub">Une cascade d'amplification de <strong>35 396 messages</strong> concentrée sur 4 jours : montée en 7 h, sommet le 26 mars, puis extinction. Lecture neutre de la dynamique — qui amplifie, à quelle vitesse, avec quelle tonalité.</p>
+</header>
+
+<main>
+  <!-- KPI STRIP -->
+  <section class="kpis">
+    <div class="kpi"><div class="n">35 396</div><div class="l">messages · 10 437 comptes</div></div>
+    <div class="kpi accent"><div class="n">85,8 %</div><div class="l">retweets (amplification native)</div></div>
+    <div class="kpi"><div class="n">751<small> /h</small></div><div class="l">pic — 26 mars 16h00</div></div>
+    <div class="kpi alert"><div class="n">30,7 %</div><div class="l">messages négatifs</div></div>
+    <div class="kpi accent"><div class="n">×3,7</div><div class="l">synchronie vs hasard (&lt;60 s)</div></div>
+    <div class="kpi alert"><div class="n">0,6 %</div><div class="l">vrai copier-coller (hors RT)</div></div>
+  </section>
+
+  <div class="grid">
+    <div class="seclabel">Ampleur &amp; tonalité</div>
+
+    <div class="card span8">
+      <h2>Volume quotidien, par tonalité</h2>
+      <p class="cap">Déflagration de 4 jours (26–29 mars) puis répliques déclinantes. Le négatif suit le pic de volume.</p>
+      <div class="chartwrap tall"><canvas id="timeline"></canvas></div>
+    </div>
+
+    <div class="card span4">
+      <h2>Répartition du sentiment</h2>
+      <p class="cap">Majorité neutre (relais bruts) ; corail = négatif.</p>
+      <div class="chartwrap tall"><canvas id="sentiment"></canvas></div>
+    </div>
+
+    <div class="seclabel">Vitesse de propagation</div>
+
+    <div class="card span12">
+      <h2>Vélocité <span class="muted">— 26 mars</span></h2>
+      <p class="cap">Ignition à 09h00 → pic à 16h00. L'audience (portée) culmine <strong style="color:var(--cyan)">2 h avant</strong> le volume : les sources tirent avant les relais.</p>
+      <div class="stats">
+        <div class="stat"><div class="v">7 h</div><div class="k">temps de montée</div></div>
+        <div class="stat"><div class="v">2,77 h</div><div class="k">temps de doublement</div></div>
+        <div class="stat"><div class="v">+28,5 %</div><div class="k">croissance / heure</div></div>
+        <div class="stat"><div class="v">7 h</div><div class="k">demi-vie post-pic</div></div>
+        <div class="stat"><div class="v">−2 h</div><div class="k">portée précède le volume</div></div>
+        <div class="stat"><div class="v">6,95 M</div><div class="k">portée au pic (14h00)</div></div>
+      </div>
+    </div>
+
+    <div class="seclabel">Acteurs &amp; narratifs</div>
+
+    <div class="card span7">
+      <h2>Comptes les plus amplifiés</h2>
+      <p class="cap">Nombre de retweets reçus (compte d'origine via <code>X Repost of</code>).</p>
+      <div class="chartwrap"><canvas id="amplified"></canvas></div>
+    </div>
+
+    <div class="card span5">
+      <h2>Poids des narratifs</h2>
+      <p class="cap">Part du volume par cadrage (TF-IDF + k-means).</p>
+      <div class="chartwrap"><canvas id="narratifs"></canvas></div>
+    </div>
+
+    <div class="seclabel">Coordination</div>
+
+    <div class="card span12">
+      <h2>Synchronie de la coordination</h2>
+      <p class="cap">30,1 % des copies atterrissent à moins de 60 s d'une autre, contre 8,1 % attendus si l'arrivée était uniforme → un facteur <strong style="color:var(--cyan)">×3,7</strong>. Amplification synchronisée réelle, mais diffuse (relais de masse, pas cellules) — le « vrai » copier-coller hors retweet reste à 0,6 %.</p>
+      <div class="coordgrid">
+        <div>
+          <div class="barrow"><span>Observé à moins de 60 s</span><b style="color:var(--cyan)">30,1 %</b></div>
+          <div class="bar"><span style="width:30.1%;background:linear-gradient(90deg,#1892a6,var(--cyan))"></span></div>
+          <div class="barrow"><span>Attendu si hasard uniforme</span><b>8,1 %</b></div>
+          <div class="bar"><span style="width:8.1%;background:var(--grey)"></span></div>
+          <div class="legend-inline"><span><span class="dot" style="background:var(--cyan)"></span>synchronisé</span><span><span class="dot" style="background:var(--grey)"></span>ligne de base (hasard)</span></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="v">30,1 %</div><div class="k">score de synchronie</div></div>
+          <div class="stat"><div class="v">×3,7</div><div class="k">vs hasard uniforme</div></div>
+          <div class="stat"><div class="v warn">0,6 %</div><div class="k">copier-coller (hors RT)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Sources : sorties déterministes des outils de l'agent Analyste (profile · timeline/velocity · semantique · coordination). Ton neutre ; le corail signale uniquement le négatif / l'alerte. Échantillon HTML de démonstration — direction visuelle à valider.
+</footer>
+</div>
+
+<script>
+const C={ink:'#0B1020',panel:'#1B2340',violet:'#7C3AED',cyan:'#22D3EE',coral:'#FF5C5C',light:'#E5E7EB',muted:'#94A3B8',line:'#2a3358',grey:'#5b6688'};
+if(window['chartjs-plugin-annotation']) Chart.register(window['chartjs-plugin-annotation']);
+Chart.defaults.color=C.muted;
+Chart.defaults.font.family='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+Chart.defaults.borderColor=C.line;
+const fr=n=>Number(n).toLocaleString('fr-FR');
+const pct=n=>String(n).replace('.',',')+' %';
+
+// value labels at the end of horizontal bars
+const barValues={id:'barValues',afterDatasetsDraw(c,a,o){
+  const{ctx}=c,fmt=o.fmt||fr;
+  ctx.save();ctx.font='600 12px system-ui';ctx.fillStyle=C.light;ctx.textBaseline='middle';
+  c.getDatasetMeta(0).data.forEach((b,i)=>{const v=c.data.datasets[0].data[i];
+    ctx.fillText(fmt(v),b.x+8,b.y);});
+  ctx.restore();}};
+
+// centre text for the doughnut
+const donutCentre={id:'donutCentre',afterDraw(c,a,o){
+  const{ctx,chartArea}=c;const x=(chartArea.left+chartArea.right)/2,y=(chartArea.top+chartArea.bottom)/2;
+  ctx.save();ctx.textAlign='center';
+  ctx.fillStyle=C.light;ctx.font='700 26px Georgia,serif';ctx.fillText('35 396',x,y-6);
+  ctx.fillStyle=C.muted;ctx.font='12px system-ui';ctx.fillText('messages',x,y+16);
+  ctx.restore();}};
+
+// daily [MM-DD, neutral, negative, positive]
+const daily=[["03-19",2,0,0],["03-20",90,3,1],["03-21",34,2,1],["03-22",3,2,1],["03-23",11,2,1],["03-24",10,5,2],["03-25",11,8,0],["03-26",4674,1904,197],["03-27",4731,2508,64],["03-28",2287,1619,82],["03-29",2763,1904,265],["03-30",1277,637,98],["03-31",1206,140,10],["04-01",965,184,9],["04-02",228,124,1],["04-03",123,46,7],["04-04",132,76,3],["04-05",121,22,2],["04-06",228,23,5],["04-07",187,19,19],["04-08",581,375,36],["04-09",457,242,104],["04-10",417,245,47],["04-11",292,120,40],["04-12",109,20,6],["04-13",69,8,2],["04-14",109,39,3],["04-15",78,78,2],["04-16",34,63,2],["04-17",98,113,1],["04-18",45,76,1],["04-19",487,28,2],["04-20",252,11,0],["04-21",51,21,4],["04-22",25,17,0],["04-23",207,21,14],["04-24",136,9,4],["04-25",113,8,2],["04-26",286,19,0],["04-27",114,36,4],["04-28",21,18,0],["04-29",43,8,0],["04-30",108,24,12],["05-01",261,34,5]];
+const labels=daily.map(r=>r[0]);
+
+new Chart(timeline,{type:'bar',data:{labels,datasets:[
+  {label:'Neutre',data:daily.map(r=>r[1]),backgroundColor:C.grey,stack:'s'},
+  {label:'Négatif',data:daily.map(r=>r[2]),backgroundColor:C.coral,stack:'s'},
+  {label:'Positif',data:daily.map(r=>r[3]),backgroundColor:C.cyan,stack:'s'}]},
+  options:{maintainAspectRatio:false,responsive:true,
+    plugins:{legend:{labels:{boxWidth:12,padding:16}},
+      tooltip:{callbacks:{footer:i=>'Total : '+fr(i.reduce((a,b)=>a+b.raw,0))}},
+      annotation:{annotations:{peak:{type:'box',xMin:'03-26',xMax:'03-29',
+        backgroundColor:'rgba(124,58,237,.10)',borderColor:'rgba(124,58,237,.45)',borderWidth:1,
+        label:{display:true,content:'Déflagration',position:{x:'center',y:'start'},
+          color:C.light,font:{size:11,weight:'600'},backgroundColor:'rgba(124,58,237,.35)',padding:4}}}}},
+    scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:12}},
+            y:{stacked:true,grid:{color:C.line},ticks:{callback:fr}}}}});
+
+new Chart(sentiment,{type:'doughnut',data:{labels:['Neutre','Négatif','Positif'],
+  datasets:[{data:[66.3,30.7,3.0],backgroundColor:[C.grey,C.coral,C.cyan],borderColor:C.panel,borderWidth:3,hoverOffset:6}]},
+  options:{maintainAspectRatio:false,cutout:'66%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:14}},
+      tooltip:{callbacks:{label:c=>c.label+' : '+pct(c.raw)}}},
+  },plugins:[donutCentre]});
+
+const amp={SirAfuera:1852,LeDindonFiscal:1544,ojim_france:1254,jon_delorraine:1083,anatolium:1065,charlesvillaa:1000,SirenesFR:856,EugenieBastie:791};
+new Chart(amplified,{type:'bar',data:{labels:Object.keys(amp).map(h=>'@'+h),
+  datasets:[{data:Object.values(amp),backgroundColor:C.violet,borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,layout:{padding:{right:44}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fr(c.raw)+' retweets'}}},
+    scales:{x:{grid:{color:C.line},ticks:{callback:fr},suggestedMax:2050},y:{grid:{display:false}}}},
+  plugins:[barValues]});
+
+// concise labels + full name in tooltip
+const nar=[
+  ['Médias « extrême gauche »',46.8,'Dénonciation du financement CNC aux médias « d’extrême gauche »'],
+  ['Argent public / gaspillage',14.2,'Détournement d’argent public / gaspillage'],
+  ['Programme CNC Talent',9.5,'Critique du programme CNC Talent'],
+  ['Ciblage d’Ultia',7.5,'Ciblage direct d’Ultia'],
+  ['Défense du CNC',6.7,'Défense du CNC / instrumentalisation par l’extrême droite']];
+new Chart(narratifs,{type:'bar',data:{labels:nar.map(r=>r[0]),
+  datasets:[{data:nar.map(r=>r[1]),backgroundColor:C.cyan,borderRadius:4}]},
+  options:{indexAxis:'y',maintainAspectRatio:false,layout:{padding:{right:44}},
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:i=>nar[i[0].dataIndex][2],label:c=>pct(c.raw)+' du volume'}}},
+    scales:{x:{grid:{color:C.line},ticks:{callback:v=>v+' %'},suggestedMax:52},y:{grid:{display:false}}}},
+  plugins:[{id:'nv',afterDatasetsDraw(c){const{ctx}=c;ctx.save();ctx.font='600 12px system-ui';
+    ctx.fillStyle=C.light;ctx.textBaseline='middle';c.getDatasetMeta(0).data.forEach((b,i)=>{
+    ctx.fillText(pct(c.data.datasets[0].data[i]),b.x+8,b.y);});ctx.restore();}}]});
+</script>
+</body>
+</html>
